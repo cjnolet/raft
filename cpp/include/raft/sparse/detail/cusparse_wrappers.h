@@ -678,8 +678,8 @@ cusparseStatus_t cusparsegemmi(  // NOLINT
   auto constexpr math_type = std::is_same_v<T, float> ? CUDA_R_32F : CUDA_R_64F;
   // Create sparse matrix B
   CUSPARSE_CHECK(cusparseCreateCsc(&matB,
-                                   k,
                                    n,
+                                   k,
                                    nnz,
                                    static_cast<void*>(const_cast<int*>(cscColPtrB)),
                                    static_cast<void*>(const_cast<int*>(cscRowIndB)),
