@@ -688,13 +688,19 @@ cusparseStatus_t cusparsegemmi(  // NOLINT
                                    CUSPARSE_INDEX_32I,
                                    CUSPARSE_INDEX_BASE_ZERO,
                                    math_type));
-  // Create dense matrices
+  /**
+   *  Create dense matrices.
+   *  Note: Since this is replacing `cusparse_gemmi`, it assumes dense inputs are
+   *  column-ordered
+   */
   CUSPARSE_CHECK(cusparseCreateDnMat(
     &matA, m, k, lda, static_cast<void*>(const_cast<T*>(A)), math_type, CUSPARSE_ORDER_COL));
   CUSPARSE_CHECK(cusparseCreateDnMat(
     &matC, m, n, ldc, static_cast<void*>(C), math_type, CUSPARSE_ORDER_COL));
 
-  auto opA = CUSPARSE_OPERATION_TRANSPOSE;
+  printf("m=%d, n=%d, k=%d\n", m, n, k);
+
+  auto opA = CUSPARSE_OPERATION_NON_TRANSPOSE;
   auto opB = CUSPARSE_OPERATION_NON_TRANSPOSE;
   auto alg   = CUSPARSE_SPMM_CSR_ALG1;
   auto buffer_size      = std::size_t{};
