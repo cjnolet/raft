@@ -33,6 +33,17 @@ project(test_raft LANGUAGES CXX CUDA)
 rapids_cpm_init()
 include(cmake/thirdparty/get_raft.cmake)
 
+
+# -------------- add legate --------------------#
+
+find_package(legate_core REQUIRED)
+set(BUILD_SHARED_LIBS ON)
+
+legate_add_cpp_subdirectory(src TARGET legate_raft EXPORT legate_raft-export)
+#legate_add_cffi(${CMAKE_CURRENT_SOURCE_DIR}/src/hello_cffi.h TARGET hello)
+#legate_python_library_template(hello)
+#legate_default_python_install(hello EXPORT hello-export)
+
+
 # -------------- compile tasks ----------------- #
-add_executable(TEST_RAFT src/test_distance.cu)
-target_link_libraries(TEST_RAFT PRIVATE raft::raft raft::compiled)
+
