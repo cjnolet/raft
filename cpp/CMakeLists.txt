@@ -26,7 +26,7 @@ include(rapids-find)
 
 rapids_cuda_init_architectures(test_raft)
 
-project(test_raft LANGUAGES CXX CUDA)
+project(test_raft LANGUAGES C CXX CUDA)
 
 # ------------- configure raft -----------------#
 
@@ -40,7 +40,7 @@ find_package(legate_core REQUIRED)
 set(BUILD_SHARED_LIBS ON)
 
 legate_add_cpp_subdirectory(src TARGET legate_raft EXPORT legate_raft-export)
-#legate_add_cffi(${CMAKE_CURRENT_SOURCE_DIR}/src/hello_cffi.h TARGET hello)
+legate_add_cffi(${CMAKE_CURRENT_SOURCE_DIR}/src/legate_raft_cffi.h TARGET legate_raft)
 #legate_python_library_template(hello)
 #legate_default_python_install(hello EXPORT hello-export)
 

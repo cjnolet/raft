@@ -3,8 +3,16 @@ legate_cpp_library_template(legate_raft TEMPLATE_SOURCES)
 
 add_library(
         legate_raft
+
+        # RAFT API wrappers
         raft/histogram.cu
         raft/distance.cu
+
+        # Legate tasks
+        task/compute_1nn.cc
+        task/histogram.cc
+
+        # Library templates
         ${TEMPLATE_SOURCES}
 )
 
