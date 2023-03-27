@@ -15,3 +15,6 @@
  */
 
 #pragma once
+
+void test_histogram();
+void test_distance();

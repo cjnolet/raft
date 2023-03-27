@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "raft_api.hpp"
 
 #include <cstdint>
 #include <raft/core/device_mdarray.hpp>

@@ -1,3 +1,5 @@
+#include "../raft/raft_api.hpp"
+
 #include "../legate_raft.h"
 #include "../legate_library.h"
 
@@ -8,7 +10,7 @@ namespace legate_raft {
     public:
         static void gpu_variant(legate::TaskContext& context)
         {
-            // TODO: Invoke primitives to compute histogram
+            test_histogram();
         }
     };
 

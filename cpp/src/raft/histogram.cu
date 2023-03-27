@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
+
+#include "raft_api.hpp"
+
 #include <cstdint>
 #include <raft/core/device_mdarray.hpp>
 #include <raft/core/device_resources.hpp>
 #include <raft/distance/distance.cuh>
 #include <raft/random/make_blobs.cuh>
+
 
 #ifdef RAFT_COMPILED
 #include <raft/distance/specializations.cuh>

@@ -1,3 +1,4 @@
+#include "../raft/raft_api.hpp"
 #include "../legate_raft.h"
 #include "../legate_library.h"
 
@@ -8,7 +9,7 @@ namespace legate_raft {
     public:
         static void gpu_variant(legate::TaskContext& context)
         {
-            // TODO: Invoke RAFT fused 1nn primitive
+            test_distance();
         }
     };
 
