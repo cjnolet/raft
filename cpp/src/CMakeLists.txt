@@ -5,12 +5,10 @@ add_library(
         legate_raft
 
         # RAFT API wrappers
-        raft/histogram.cu
-        raft/distance.cu
+        raft/raft_knn.cu
 
         # Legate tasks
-        task/compute_1nn.cc
-        task/histogram.cc
+        legate_tasks/knn_task.cc
 
         # Library templates
         ${TEMPLATE_SOURCES}

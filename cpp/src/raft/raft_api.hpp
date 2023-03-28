@@ -16,5 +16,12 @@
 
 #pragma once
 
-void test_histogram();
-void test_distance();
+template<typename idx_t, typename value_t>
+void raft_knn(idx_t n_index_rows,
+              idx_t n_search_rows,
+              idx_t n_features,
+              idx_t k,
+              value_t* index_ptr,
+              value_t* search_ptr,
+              idx_t* indices_ptr,
+              float* distances_ptr);
