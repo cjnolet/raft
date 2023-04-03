@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-
-# Copyright 2023 NVIDIA Corporation
+# Copyright 2021 NVIDIA Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,12 +13,6 @@
 # limitations under the License.
 #
 
-import setuptools
+from pkgutil import extend_path
 
-setuptools.setup(
-    name="legate.raft",
-    packages=setuptools.find_packages(),
-    setup_requires=["scikit-build"],
-    cmake_args=["-DCMAKE_INSTALL_PREFIX=./install"],
-    zip_safe=False,
-)
+__path__ = extend_path(__path__, __name__)

@@ -14,50 +14,56 @@
  * limitations under the License.
  */
 
-#include "raft_api.hpp"
+ #include "raft_api.hpp"
 
-#include <cstdint>
-#include <raft/core/device_resources.hpp>
-#include <raft/core/device_mdspan.hpp>
-#include <raft/distance/distance_types.hpp>
-#include <raft/neighbors/brute_force.cuh>
+ #include <cstdint>
+ #include <raft/core/device_resources.hpp>
+ #include <raft/core/mdspan_types.hpp>
+ #include <raft/core/device_mdspan.hpp>
+ #include <raft/distance/distance_types.hpp>
+ #include <raft/neighbors/brute_force.cuh>
 
-#ifdef RAFT_COMPILED
-#include <raft/distance/specializations.cuh>
-#endif
+ #ifdef RAFT_COMPILED
+ #include <raft/distance/specializations.cuh>
+ #endif
+
 
 template<typename idx_t, typename value_t>
 void raft_knn(idx_t n_index_rows,
               idx_t n_search_rows,
               idx_t n_features,
               idx_t k,
-              value_t* index_ptr,
-              value_t* search_ptr,
+              const value_t* index_ptr,
+              const value_t* search_ptr,
               idx_t* indices_ptr,
               float* distances_ptr)
 {
-  raft::device_resources handle;
+    raft::device_resources handle;
 
-  auto index  = raft::make_device_matrix_view<const value_t, idx_t>(index_ptr, n_index_rows, n_features);
-  auto search  = raft::make_device_matrix_view<const value_t, idx_t>(search_ptr, n_search_rows, n_features);
-  auto indices = raft::make_device_vector_view<idx_t, idx_t>(indices_ptr, n_search_rows, k);
-  auto distances = raft::make_device_matrix_view<float, idx_t>(distances_ptr, n_search_rows, k);
+    auto index_part = raft::make_device_matrix_view<const value_t, idx_t, raft::row_major>(index_ptr, n_index_rows, n_features);
+    auto search = raft::make_device_matrix_view<const value_t, idx_t, raft::row_major>(search_ptr, n_search_rows, n_features);
+    auto indices = raft::make_device_matrix_view<idx_t, idx_t, raft::row_major>(indices_ptr, n_search_rows, k);
+    auto distances = raft::make_device_matrix_view<value_t, idx_t, raft::row_major>(distances_ptr, n_search_rows, k);
 
-  auto metric = raft::distance::DistanceType::L2SqrtExpanded;
-  raft::neighbors::brute_force::knn(handle,
-                                    index,
-                                    search,
-                                    indices,
-                                    distances,
-                                    k,
-                                    metric);
+    std::vector<raft::device_matrix_view<const value_t, idx_t, raft::row_major>> index;
+    index.push_back(index_part);
+
+    auto metric = raft::distance::DistanceType::L2SqrtExpanded;
+    raft::neighbors::brute_force::knn(handle,
+                                        index,
+                                        search,
+                                        indices,
+                                        distances,
+                                        metric);
 }
 
-void raft_knn(int64_t n_index_rows,
-              int64_t n_search_rows,
-              int64_t n_features,
-              int64_t k,
-              float* index_ptr,
-              float* search_ptr,
-              int64_t* indices_ptr,
-              float* distances_ptr);
+
+template void raft_knn(
+  int64_t,
+  int64_t,
+  int64_t,
+  int64_t,
+  const float*,
+  const float*,
+  int64_t*,
+  float*);

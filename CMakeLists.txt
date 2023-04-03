@@ -22,28 +22,25 @@ include(rapids-cuda)
 include(rapids-export)
 include(rapids-find)
 
-# ------------- configure project --------------#
+# ------------- configure project -------------- #
 
-rapids_cuda_init_architectures(test_raft)
+rapids_cuda_init_architectures(legate_raft)
+project(legate_raft LANGUAGES C CXX CUDA)
 
-project(test_raft LANGUAGES C CXX CUDA)
-
-# ------------- configure raft -----------------#
+# ------------- configure raft ----------------- #
 
 rapids_cpm_init()
 include(cmake/thirdparty/get_raft.cmake)
 
-
-# -------------- add legate --------------------#
+# -------------- add requirements -------------- #
 
 find_package(legate_core REQUIRED)
 set(BUILD_SHARED_LIBS ON)
 
-legate_add_cpp_subdirectory(src TARGET legate_raft EXPORT legate_raft-export)
-legate_add_cffi(${CMAKE_CURRENT_SOURCE_DIR}/src/legate_raft_cffi.h TARGET legate_raft)
-legate_python_library_template(../legate/raft)
-legate_default_python_install(../legate/raft EXPORT legate_raft-export)
-
-
 # -------------- compile tasks ----------------- #
 
+# C++ layer
+legate_add_cpp_subdirectory(cpp/src TARGET legate_raft EXPORT legate_raft-export)
+
+# Python layer
+add_subdirectory(legate)
