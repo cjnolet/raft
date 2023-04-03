@@ -33,6 +33,7 @@ void raft_knn(idx_t n_index_rows,
               idx_t n_search_rows,
               idx_t n_features,
               idx_t k,
+              std::string& metric,
               const value_t* index_ptr,
               const value_t* search_ptr,
               idx_t* indices_ptr,
@@ -48,13 +49,18 @@ void raft_knn(idx_t n_index_rows,
     std::vector<raft::device_matrix_view<const value_t, idx_t, raft::row_major>> index;
     index.push_back(index_part);
 
-    auto metric = raft::distance::DistanceType::L2SqrtExpanded;
+    raft::distance::DistanceType distance_type;
+    if (metric == "l2") {
+      distance_type = raft::distance::DistanceType::L2SqrtExpanded;
+    } else {
+      throw std::invalid_argument("invalid metric");
+    }
     raft::neighbors::brute_force::knn(handle,
                                         index,
                                         search,
                                         indices,
                                         distances,
-                                        metric);
+                                        distance_type);
 }
 
 
@@ -63,6 +69,7 @@ template void raft_knn(
   int64_t,
   int64_t,
   int64_t,
+  std::string&,
   const float*,
   const float*,
   int64_t*,

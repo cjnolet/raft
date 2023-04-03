@@ -6,3 +6,4 @@ legate.raft.egg-info/
 legate/raft/__pycache__/
 legate/raft/library.py
 legate/raft/install_info.py
+pytest/__pycache__

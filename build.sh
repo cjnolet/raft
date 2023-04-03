@@ -32,6 +32,7 @@ if [ "$1" == "clean" ]; then
   python setup.py clean --all
   rm legate/raft/install_info.py
   rm legate/raft/library.py
+  rm -rf pytest/__pycache__
   exit 0
 fi
 
