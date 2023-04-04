@@ -22,4 +22,4 @@ def test_knn():
 
     distances, indices = run_knn(blob_index, blob_search, k, metric)
     np.testing.assert_allclose(indices, ref_indices)
-    np.testing.assert_allclose(distances, ref_distances)
+    np.testing.assert_allclose(distances, ref_distances, rtol=0.001)

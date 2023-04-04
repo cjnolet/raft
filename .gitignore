@@ -7,3 +7,5 @@ legate/raft/__pycache__/
 legate/raft/library.py
 legate/raft/install_info.py
 pytest/__pycache__
+cpp/src/legate_library.cc
+cpp/src/legate_library.h
