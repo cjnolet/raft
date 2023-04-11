@@ -1,3 +1,13 @@
-build/
+.eggs/
 .idea
-
+__pycache__/
+_skbuild/
+build/
+cpp/src/legate_library.cc
+cpp/src/legate_library.h.eggs/
+dist/
+legate.raft.egg-info/
+legate/raft/__pycache__/
+legate/raft/install_info.py
+legate/raft/library.py
+pytest/__pycache__

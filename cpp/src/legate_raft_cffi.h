@@ -1,5 +1,17 @@
 enum LegateRaftOpCode {
     _OP_CODE_BASE = 0,
-    FUSED_1NN   = 1,
-    HISTOGRAM   = 2
+    ADD,
+    ADD_CONSTANT,
+    BINCOUNT,
+    CATEGORIZE,
+    CONVERT,
+    EXP,
+    FILL,
+    FIND_MAX,
+    FUSED_1NN,
+    HISTOGRAM,
+    LOG,
+    MATMUL,
+    MUL,
+    SUM_OVER_AXIS,
 };

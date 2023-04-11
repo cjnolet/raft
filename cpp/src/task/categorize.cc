@@ -24,14 +24,14 @@ namespace legate_raft {
 
 namespace {
 
-struct histogram_fn {
+struct categorize_fn {
   template <legate::LegateTypeCode CODE,
             std::enable_if_t<!legate::is_complex<CODE>::value>* = nullptr>
   void operator()(legate::Store& result, legate::Store& input, legate::Store& bins)
   {
     using VAL = legate::legate_type_of<CODE>;
 
-    auto in_shape  = input.shape<1>();
+    auto in_shape  = result.shape<1>();
     auto bin_shape = bins.shape<1>();
 
     assert(!bin_shape.empty());
@@ -41,15 +41,17 @@ struct histogram_fn {
 
     auto in_acc  = input.read_accessor<VAL, 1>();
     auto bin_acc = bins.read_accessor<VAL, 1>();
-    auto res_acc = result.reduce_accessor<legate::SumReduction<uint64_t>, true, 1>();
+    auto res_acc = result.write_accessor<uint64_t, 1>();
 
     for (legate::PointInRectIterator<1> it(in_shape); it.valid(); ++it) {
-      auto& value = in_acc[*it];
-      for (auto bin_idx = 0; bin_idx < num_bins; ++bin_idx)
+      auto p      = *it;
+      auto& value = in_acc[p];
+      for (auto bin_idx = 0; bin_idx < num_bins; ++bin_idx) {
         if (bin_acc[bin_idx] <= value && value < bin_acc[bin_idx + 1]) {
-          res_acc.reduce(bin_idx, 1);
+          res_acc[p] = static_cast<uint64_t>(bin_idx);
           break;
         }
+      }
     }
   }
 
@@ -63,15 +65,15 @@ struct histogram_fn {
 
 }  // namespace
 
-class HistogramTask : public Task<HistogramTask, HISTOGRAM> {
+class CategorizeTask : public Task<CategorizeTask, CATEGORIZE> {
  public:
   static void cpu_variant(legate::TaskContext& context)
   {
     auto& input  = context.inputs()[0];
     auto& bins   = context.inputs()[1];
-    auto& result = context.reductions()[0];
+    auto& result = context.outputs()[0];
 
-    legate::type_dispatch(input.code(), histogram_fn{}, result, input, bins);
+    legate::type_dispatch(input.code(), categorize_fn{}, result, input, bins);
   }
 };
 
@@ -81,7 +83,7 @@ namespace {
 
 static void __attribute__((constructor)) register_tasks()
 {
-  legate_raft::HistogramTask::register_variants();
+  legate_raft::CategorizeTask::register_variants();
 }
 
 }  // namespace

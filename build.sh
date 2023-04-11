@@ -7,6 +7,8 @@
 # Abort script on first error
 set -e
 
+INSTALL_PREFIX=${INSTALL_PREFIX:=${PREFIX:=${CONDA_PREFIX}}}
+
 PARALLEL_LEVEL=${PARALLEL_LEVEL:=`nproc`}
 
 BUILD_TYPE=Release
@@ -24,6 +26,13 @@ fi
 
 if [ "$1" == "clean" ]; then
   rm -rf cpp/build
+  rm -rf dist legate.raft.egg-info
+  rm cpp/src/legate_library.cc
+  rm cpp/src/legate_library.h
+  python setup.py clean --all
+  rm legate/raft/install_info.py
+  rm legate/raft/library.py
+  rm -rf pytest/__pycache__
   exit 0
 fi
 
@@ -35,7 +44,12 @@ cmake \
  -DRAFT_NVTX=OFF \
  -DCMAKE_CUDA_ARCHITECTURES="NATIVE" \
  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+ -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
  ${EXTRA_CMAKE_ARGS} \
- ../
+ ../../
 
-cmake  --build . -j${PARALLEL_LEVEL}
+cmake --build . -j${PARALLEL_LEVEL}
+cmake --install . --prefix ${INSTALL_PREFIX}
+
+cd ../..
+python setup.py install

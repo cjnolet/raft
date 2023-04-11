@@ -1,0 +1,56 @@
+import numpy as np
+import pytest
+from hypothesis import assume, example, given, note, settings
+from hypothesis import strategies as st
+from hypothesis.extra.numpy import array_shapes
+
+from .util import broadcast_shape, promote
+
+
+@given(a=array_shapes(), b=array_shapes())
+@settings(max_examples=1000)
+def test_broadcast(a, b):
+    try:
+        broadcasted_shape = broadcast_shape(a, b)
+    except ValueError:
+        note(f"incompatible {a} {b}")
+        with pytest.raises(ValueError):
+            np.ones(a) + np.ones(b)
+    else:
+        note(f"compatible: {a} {b} -> {broadcasted_shape}")
+        assert broadcasted_shape == (np.ones(a) + np.ones(b)).shape
+
+
+@st.composite
+def promotable_shapes(draw):
+    to_shape = draw(array_shapes(min_dims=2))
+
+    num_dims_to_remove = draw(st.integers(min_value=1, max_value=len(to_shape) - 1))
+    front = draw(st.booleans())
+    if front:
+        from_shape = tuple(to_shape[num_dims_to_remove:])
+    else:
+        from_shape = tuple(to_shape[: len(to_shape) - num_dims_to_remove])
+
+    try:
+        assume(broadcast_shape(from_shape, to_shape) == to_shape)
+    except ValueError:
+        assume(False)
+
+    return from_shape, to_shape
+
+
+@example(((2,), (1, 2, 3)))
+@given(shapes=promotable_shapes())
+@settings(max_examples=1000)
+def test_promote(shapes):
+    from_shape, to_shape = shapes
+
+    try:
+        broadcast_shape(from_shape, to_shape)
+    except ValueError:
+        pass
+    else:
+        promoted = list(from_shape)
+        promote(from_shape, to_shape, lambda dim, size: promoted.insert(dim, size))
+        assert tuple(promoted) == to_shape
