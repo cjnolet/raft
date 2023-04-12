@@ -11,13 +11,13 @@ from sklearn.preprocessing import LabelBinarizer
 
 from legate.raft import (
     add,
-    array_to_store,
+    as_array,
+    as_store,
     convert,
     exp,
     fill,
     log,
     matmul,
-    store_to_array,
     subtract,
     sum_over_axis,
 )
@@ -34,12 +34,12 @@ class MultinomialNB:
 
     def fit(self, X, y):
         # Convert to a legate stores
-        X = array_to_store(X)
+        X = as_store(X)
         _, n_features = X.shape
         self.n_features_in_ = n_features
 
         labelbin = LabelBinarizer()
-        Y = array_to_store(labelbin.fit_transform(y))
+        Y = as_store(labelbin.fit_transform(y))
 
         self.classes_ = labelbin.classes_
         assert Y.shape[1] != 1
@@ -69,12 +69,12 @@ class MultinomialNB:
     @property
     def feature_log_prob_(self):
         if self._feature_log_prob_ is not None:
-            return store_to_array(self._feature_log_prob_)
+            return as_array(self._feature_log_prob_)
 
     @property
     def class_log_prior_(self):
         if self._class_log_prior_ is not None:
-            return store_to_array(self._class_log_prior_)
+            return as_array(self._class_log_prior_)
 
     def _update_class_log_prior(self, class_prior=None):
         n_classes = len(self.classes_)
@@ -104,17 +104,17 @@ class MultinomialNB:
         return subtract(x1.transpose((1, 0)), x2).transpose((1, 0))
 
     def predict_log_proba(self, X):
-        X = array_to_store(X)
+        X = as_store(X)
         ret = self._predict_log_proba(X)
-        return store_to_array(ret)
+        return as_array(ret)
 
     def predict_proba(self, X):
-        X = array_to_store(X)
+        X = as_store(X)
         ret = exp(self._predict_log_proba(X))
-        return store_to_array(ret)
+        return as_array(ret)
 
     def predict(self, X):
-        X = array_to_store(X)
-        jll = store_to_array(self._joint_log_likelihood(X))
+        X = as_store(X)
+        jll = as_array(self._joint_log_likelihood(X))
         ret = self.classes_[np.argmax(jll, axis=1)]
         return ret

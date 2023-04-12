@@ -45,7 +45,7 @@ class _NDArray:
         }
 
 
-def array_to_store(array: np.ndarray) -> Store:
+def as_store(array: np.ndarray) -> Store:
     store = context.create_store(
         pa.from_numpy_dtype(array.dtype),
         shape=array.shape,
@@ -59,7 +59,7 @@ def array_to_store(array: np.ndarray) -> Store:
     return store
 
 
-def store_to_array(store: Store) -> np.ndarray:
+def as_array(store: Store) -> np.ndarray:
     if store.kind is Future:
         dtype = store.get_dtype()
         buf = store.storage.get_buffer(dtype.size)
