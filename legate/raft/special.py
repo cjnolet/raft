@@ -14,9 +14,9 @@
 #
 from legate.core import Store
 
-from .core import add, exp, log
-from .core import max as lg_max
-from .core import subtract, sum_over_axis
+from .array_api import add, exp, log
+from .array_api import max as lg_max
+from .array_api import subtract, sum_over_axis
 
 
 def logsumexp(x: Store, axis: int) -> Store:
