@@ -13,5 +13,7 @@ enum LegateRaftOpCode {
     LOG,
     MATMUL,
     MUL,
+    RAFT_KNN,
+    RAFT_KNN_MERGE,
     SUM_OVER_AXIS,
 };

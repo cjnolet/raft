@@ -6,6 +6,8 @@ add_library(
         # RAFT API Wrappers
         raft/histogram.cu
         raft/distance.cu
+        raft/raft_knn.cu
+        raft/raft_knn_merge.cu
 
         # Legate tasks
         task/add.cc
@@ -18,6 +20,8 @@ add_library(
         task/fill.cc
         task/find_max.cc
         task/histogram.cc
+        task/knn_task.cc
+        task/knn_merge_task.cc
         task/log.cc
         task/matmul.cc
         task/mul.cc
