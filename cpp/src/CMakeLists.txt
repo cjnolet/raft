@@ -3,13 +3,29 @@ legate_cpp_library_template(legate_raft TEMPLATE_SOURCES)
 add_library(
         legate_raft
 
-        # RAFT API wrappers
+        # RAFT API Wrappers
+        raft/histogram.cu
+        raft/distance.cu
         raft/raft_knn.cu
         raft/raft_knn_merge.cu
 
         # Legate tasks
-        legate_tasks/knn_task.cc
-        legate_tasks/knn_merge_task.cc
+        task/add.cc
+        # task/compute_1nn.cc
+        task/add_constant.cc
+        task/bincount.cc
+        task/categorize.cc
+        task/convert.cc
+        task/exp.cc
+        task/fill.cc
+        task/find_max.cc
+        task/histogram.cc
+        task/knn_task.cc
+        task/knn_merge_task.cc
+        task/log.cc
+        task/matmul.cc
+        task/mul.cc
+        task/sum_over_axis.cc
 
         # Library templates
         ${TEMPLATE_SOURCES}

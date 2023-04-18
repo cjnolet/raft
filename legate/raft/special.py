@@ -12,26 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from legate.core import Store
 
-from .array_api import add, exp, fill, log, negative, subtract, sum_over_axis
-from .core import as_array, as_store, convert
-from .multiarray import bincount, categorize, matmul, multiply
-from .knn import run_knn
+from .array_api import add, exp, log
+from .array_api import max as lg_max
+from .array_api import subtract, sum_over_axis
 
-__all__ = [
-    "add",
-    "as_array",
-    "as_store",
-    "bincount",
-    "categorize",
-    "convert",
-    "exp",
-    "fill",
-    "log",
-    "matmul",
-    "multiply",
-    "negative",
-    "run_knn",
-    "subtract",
-    "sum_over_axis",
-]
+
+def logsumexp(x: Store, axis: int) -> Store:
+    # The implementation below implements the following operations
+    # expressed via the numpy API:
+    # c = x.max()
+    # c + np.log(np.sum(np.exp(x - c)))
+
+    x_max = lg_max(x, axis=axis)
+    tmp0 = subtract(x.transpose((1, 0)), x_max).transpose((1, 0))
+    tmp = exp(tmp0)
+    s = sum_over_axis(tmp, axis=axis)
+    out = log(s)
+    ret = add(out, x_max)
+    return ret

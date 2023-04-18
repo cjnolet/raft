@@ -1,0 +1,30 @@
+---
+# Copyright (c) 2023, NVIDIA CORPORATION.
+
+repos:
+    - repo: https://github.com/psf/black
+      rev: 23.1.0
+      hooks:
+          - id: black
+            exclude: 'legate/naive_bayes/library\.py$'
+    - repo: https://github.com/PyCQA/flake8
+      rev: 6.0.0
+      hooks:
+          - id: flake8
+            exclude: 'legate/naive_bayes/library\.py$'
+    - repo: https://github.com/codespell-project/codespell
+      rev: v2.2.4
+      hooks:
+          - id: codespell
+            additional_dependencies: [tomli]
+    - repo: https://github.com/pycqa/isort
+      rev: 5.12.0
+      hooks:
+          - id: isort
+    - repo: https://github.com/kynan/nbstripout
+      rev: 0.6.1
+      hooks:
+          - id: nbstripout
+
+default_language_version:
+    python: python3

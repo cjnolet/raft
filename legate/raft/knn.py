@@ -24,7 +24,7 @@ import numpy as np
 def run_knn(index: np.ndarray,
             search: np.ndarray,
             n_neighbors: int,
-            metric : str ='l2'):
+            metric : str = 'l2'):
     index_batch_size = 512
     query_batch_size = 8
     n_features = index.shape[1]
@@ -44,8 +44,10 @@ def run_knn(index: np.ndarray,
     distances_buffer_array = np.zeros((buffer_size, n_neighbors), dtype=np.float32)
     indices_buffer_store = array_to_store(indices_buffer_array)
     distances_buffer_store = array_to_store(distances_buffer_array)
-    indices_buffer_store = indices_buffer_store.partition_by_tiling((query_batch_size, n_neighbors))
-    distances_buffer_store = distances_buffer_store.partition_by_tiling((query_batch_size, n_neighbors))
+    indices_buffer_store = \
+        indices_buffer_store.partition_by_tiling((query_batch_size, n_neighbors))
+    distances_buffer_store = \
+        distances_buffer_store.partition_by_tiling((query_batch_size, n_neighbors))
 
     # Run KNN task
     nn_task = context.create_manual_task(user_lib.cffi.RAFT_KNN,

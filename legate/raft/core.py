@@ -14,11 +14,15 @@
 #
 
 from dataclasses import dataclass
+
+import numpy as np
 import pyarrow as pa
+
 from legate.core import Store
 from legate.core._legion.future import Future
+
+from .cffi import OpCode
 from .library import user_context as context
-import numpy as np
 
 
 @dataclass
@@ -40,7 +44,8 @@ class _NDArray:
             "strides": self.strides,
         }
 
-def array_to_store(array: np.ndarray) -> Store:
+
+def as_store(array: np.ndarray) -> Store:
     store = context.create_store(
         pa.from_numpy_dtype(array.dtype),
         shape=array.shape,
@@ -54,7 +59,7 @@ def array_to_store(array: np.ndarray) -> Store:
     return store
 
 
-def store_to_array(store: Store) -> np.ndarray:
+def as_array(store: Store) -> np.ndarray:
     if store.kind is Future:
         dtype = store.get_dtype()
         buf = store.storage.get_buffer(dtype.size)
@@ -74,3 +79,15 @@ def store_to_array(store: Store) -> np.ndarray:
 
         result = alloc.consume(construct_ndarray)
         return result
+
+
+def convert(input: Store, dtype: pa.DataType) -> Store:
+    dtype = context.type_system[dtype]
+    result = context.create_store(dtype, input.shape)
+    task = context.create_auto_task(OpCode.CONVERT)
+    task.add_input(input)
+    task.add_output(result)
+    task.add_alignment(input, result)
+    task.execute()
+
+    return result

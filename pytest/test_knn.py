@@ -1,8 +1,8 @@
-import pytest
 import numpy as np
 from sklearn.datasets import make_blobs
 from sklearn.neighbors import NearestNeighbors
 from legate.raft import run_knn
+
 
 def test_knn():
     k = 8
@@ -12,8 +12,7 @@ def test_knn():
     n_search_rows = 16
 
     X, _ = make_blobs(n_samples=n_index_rows + n_search_rows,
-                        centers=5,
-                        n_features=n_features)
+                      centers=5, n_features=n_features)
     blob_index = X[:n_index_rows].astype(np.float32)
     blob_search = X[n_index_rows:].astype(np.float32)
     nn = NearestNeighbors(n_neighbors=k)
