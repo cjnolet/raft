@@ -6,11 +6,11 @@
 
 namespace legate_raft {
 
-    class RAFT_KNN_TASK : public Task<RAFT_KNN_TASK, RAFT_KNN_OP> {
+    class RAFT_KNN_TASK : public Task<RAFT_KNN_TASK, RAFT_KNN> {
     public:
         static void gpu_variant(legate::TaskContext& context)
         {
-            int64_t k = context.scalars()[0].value<int64_t>();
+            int64_t k = context.scalars()[0].value<int64_t>(); // number of nearest neighbors
             std::string metric = context.scalars()[1].value<std::string>();
 
             auto& index = context.inputs()[0];
@@ -25,6 +25,8 @@ namespace legate_raft {
                 throw std::invalid_argument("index and search should have the same number of features");
             }
 
+            // The offset of the current partition from the start of the store
+            // is used to obtain the pointer to the start of the partition.
             uint64_t offset = search.shape<2>().lo[0];
             auto index_read = index.read_accessor<float, 2>().ptr(Legion::DomainPoint(0));
             auto search_read = search.read_accessor<float, 2>().ptr(Legion::DomainPoint(offset));

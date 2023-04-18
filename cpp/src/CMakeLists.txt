@@ -5,9 +5,11 @@ add_library(
 
         # RAFT API wrappers
         raft/raft_knn.cu
+        raft/raft_knn_merge.cu
 
         # Legate tasks
         legate_tasks/knn_task.cc
+        legate_tasks/knn_merge_task.cc
 
         # Library templates
         ${TEMPLATE_SOURCES}

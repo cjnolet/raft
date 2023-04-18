@@ -39,7 +39,7 @@ void raft_knn(idx_t n_index_rows,
               idx_t* indices_ptr,
               float* distances_ptr)
 {
-    raft::device_resources handle;
+    static raft::device_resources handle;
 
     auto index_part = raft::make_device_matrix_view<const value_t, idx_t, raft::row_major>(index_ptr, n_index_rows, n_features);
     auto search = raft::make_device_matrix_view<const value_t, idx_t, raft::row_major>(search_ptr, n_search_rows, n_features);
@@ -56,11 +56,11 @@ void raft_knn(idx_t n_index_rows,
       throw std::invalid_argument("invalid metric");
     }
     raft::neighbors::brute_force::knn(handle,
-                                        index,
-                                        search,
-                                        indices,
-                                        distances,
-                                        distance_type);
+                                      index,
+                                      search,
+                                      indices,
+                                      distances,
+                                      distance_type);
 }
 
 
