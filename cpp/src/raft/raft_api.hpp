@@ -15,6 +15,7 @@
  */
 
 #pragma once
+#include <string>
 
 template<typename idx_t, typename value_t>
 void raft_knn(idx_t n_index_rows,

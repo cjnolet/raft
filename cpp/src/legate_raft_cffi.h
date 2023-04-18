@@ -15,5 +15,7 @@ enum LegateRaftOpCode {
     MUL,
     RAFT_KNN,
     RAFT_KNN_MERGE,
-    SUM_OVER_AXIS,
+    RAFT_KMEANS,
+    RAFT_KMEANS_FIT,
+    SUM_OVER_AXIS
 };

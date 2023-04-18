@@ -6,8 +6,9 @@ add_library(
         # RAFT API Wrappers
         raft/histogram.cu
         raft/distance.cu
-        raft/raft_knn.cu
-        raft/raft_knn_merge.cu
+        raft/raft_kmeans.cu
+#        raft/raft_knn.cu
+#        raft/raft_knn_merge.cu
 
         # Legate tasks
         task/add.cc

@@ -16,6 +16,7 @@
 
 #include "raft_api.hpp"
 
+#include <optional>
 #include <cstdint>
 #include <raft/core/device_resources.hpp>
 #include <raft/core/mdspan_types.hpp>
