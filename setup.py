@@ -17,9 +17,14 @@
 
 import setuptools
 
+packages = (
+    setuptools.find_namespace_packages(include=["legate.*"])
+    + setuptools.find_packages()
+)
+
 setuptools.setup(
     name="legate.raft",
-    packages=setuptools.find_packages(),
+    packages=packages,
     setup_requires=["scikit-build"],
     cmake_args=["-DCMAKE_INSTALL_PREFIX=./install"],
     zip_safe=False,
