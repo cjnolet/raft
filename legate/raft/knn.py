@@ -18,7 +18,7 @@ import numpy as np
 import legate.core.types as types
 from legate.core import Rect
 
-from .core import array_to_store, store_to_array
+from .core import as_array, as_store
 from .library import user_context as context
 from .library import user_lib
 
@@ -31,11 +31,11 @@ def run_knn(
     n_features = index.shape[1]
 
     # Setup index store
-    index_store = array_to_store(index)
+    index_store = as_store(index)
     index_store = index_store.partition_by_tiling((index_batch_size, n_features))
 
     # Setup search store
-    search_store = array_to_store(search)
+    search_store = as_store(search)
     search_store = search_store.partition_by_tiling((query_batch_size, n_features))
 
     # Setup buffer stores
@@ -43,8 +43,8 @@ def run_knn(
     buffer_size = n_parts * query_batch_size
     indices_buffer_array = np.zeros((buffer_size, n_neighbors), dtype=np.int64)
     distances_buffer_array = np.zeros((buffer_size, n_neighbors), dtype=np.float32)
-    indices_buffer_store = array_to_store(indices_buffer_array)
-    distances_buffer_store = array_to_store(distances_buffer_array)
+    indices_buffer_store = as_store(indices_buffer_array)
+    distances_buffer_store = as_store(distances_buffer_array)
     indices_buffer_store = indices_buffer_store.partition_by_tiling(
         (query_batch_size, n_neighbors)
     )
@@ -65,19 +65,19 @@ def run_knn(
     nn_task.execute()
 
     # Gather buffer store partitions
-    indices_buffer_array = store_to_array(indices_buffer_store.store)
+    indices_buffer_array = as_array(indices_buffer_store.store)
     indices_buffer_array = np.array(indices_buffer_array, copy=True)
-    indices_buffer_gathered = array_to_store(indices_buffer_array)
-    distances_buffer_array = store_to_array(distances_buffer_store.store)
+    indices_buffer_gathered = as_store(indices_buffer_array)
+    distances_buffer_array = as_array(distances_buffer_store.store)
     distances_buffer_array = np.array(distances_buffer_array, copy=True)
-    distances_buffer_gathered = array_to_store(distances_buffer_array)
+    distances_buffer_gathered = as_store(distances_buffer_array)
 
     # Setup output stores
     n_search_rows = search.shape[0]
     indices_output = np.zeros((n_search_rows, n_neighbors), dtype=np.int64)
     distances_output = np.zeros((n_search_rows, n_neighbors), dtype=np.float32)
-    indices_store = array_to_store(indices_output)
-    distances_store = array_to_store(distances_output)
+    indices_store = as_store(indices_output)
+    distances_store = as_store(distances_output)
 
     # Run KNN merge task
     merge_task = context.create_manual_task(
@@ -94,7 +94,7 @@ def run_knn(
     merge_task.execute()
 
     # Produce output array
-    indices = store_to_array(indices_store)
-    distances = store_to_array(distances_store)
+    indices = as_array(indices_store)
+    distances = as_array(distances_store)
 
     return distances, indices
