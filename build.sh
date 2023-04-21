@@ -52,4 +52,4 @@ cmake --build . -j${PARALLEL_LEVEL}
 cmake --install . --prefix ${INSTALL_PREFIX}
 
 cd ../..
-python setup.py install
+python -m pip install -e .
