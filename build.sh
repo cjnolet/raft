@@ -27,11 +27,11 @@ fi
 if [ "$1" == "clean" ]; then
   rm -rf cpp/build
   rm -rf dist legate.raft.egg-info
-  rm cpp/src/legate_library.cc
-  rm cpp/src/legate_library.h
+  rm -f cpp/src/legate_library.cc
+  rm -f cpp/src/legate_library.h
   python setup.py clean --all
-  rm legate/raft/install_info.py
-  rm legate/raft/library.py
+  rm -f legate/raft/install_info.py
+  rm -f legate/raft/library.py
   rm -rf pytest/__pycache__
   exit 0
 fi
