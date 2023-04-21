@@ -21,8 +21,8 @@ add_library(
         task/fill.cc
         task/find_max.cc
         task/histogram.cc
-        task/knn_task.cc
-        task/knn_merge_task.cc
+        # task/knn_task.cc
+        # task/knn_merge_task.cc
         task/log.cc
         task/matmul.cc
         task/mul.cc
