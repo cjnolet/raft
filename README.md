@@ -19,7 +19,7 @@ mamba install -c conda-forge -c rapidsai-nightly -c nvidia libraft==23.04*
 
 - Can potentially copy in `bincount` from legate.core or the `raft::stats::histogram` or other RAFT primitives.
 - maybe we could try to use pylibraft as a legate task if they make progress on exposing legate tasks through Python UDFs?
-- Interested in an end-to-end prototype that uses the underlying indices array from the legate.sparse csr w/ bincount/histogram primitive. 
+- Interested in an end-to-end prototype that uses the underlying indices array from the legate.sparse csr w/ bincount/histogram primitive.
 
 ### K-NN
 

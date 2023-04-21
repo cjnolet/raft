@@ -15,8 +15,8 @@
 
 from .array_api import add, exp, fill, log, negative, subtract, sum_over_axis
 from .core import as_array, as_store, convert
-from .multiarray import bincount, categorize, matmul, multiply
 from .knn import run_knn
+from .multiarray import bincount, categorize, matmul, multiply
 
 __all__ = [
     "add",

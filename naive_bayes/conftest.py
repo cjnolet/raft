@@ -1,7 +1,8 @@
 import numpy as np
-import pytest
 from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import CountVectorizer
+
+import pytest
 
 
 def _nlp_20news():

@@ -1,8 +1,9 @@
 import numpy as np
-import pytest
 from hypothesis import assume, example, given, note, settings
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import array_shapes
+
+import pytest
 
 from .util import broadcast_shape, promote
 

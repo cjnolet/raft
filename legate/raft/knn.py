@@ -13,18 +13,19 @@
 # limitations under the License.
 #
 
-import legate.core.types as types
-from legate.core import Rect
-from .library import user_context as context
-from .library import user_lib
-from .core import array_to_store, store_to_array
 import numpy as np
 
+import legate.core.types as types
+from legate.core import Rect
 
-def run_knn(index: np.ndarray,
-            search: np.ndarray,
-            n_neighbors: int,
-            metric : str = 'l2'):
+from .core import array_to_store, store_to_array
+from .library import user_context as context
+from .library import user_lib
+
+
+def run_knn(
+    index: np.ndarray, search: np.ndarray, n_neighbors: int, metric: str = "l2"
+):
     index_batch_size = 512
     query_batch_size = 8
     n_features = index.shape[1]
@@ -44,14 +45,17 @@ def run_knn(index: np.ndarray,
     distances_buffer_array = np.zeros((buffer_size, n_neighbors), dtype=np.float32)
     indices_buffer_store = array_to_store(indices_buffer_array)
     distances_buffer_store = array_to_store(distances_buffer_array)
-    indices_buffer_store = \
-        indices_buffer_store.partition_by_tiling((query_batch_size, n_neighbors))
-    distances_buffer_store = \
-        distances_buffer_store.partition_by_tiling((query_batch_size, n_neighbors))
+    indices_buffer_store = indices_buffer_store.partition_by_tiling(
+        (query_batch_size, n_neighbors)
+    )
+    distances_buffer_store = distances_buffer_store.partition_by_tiling(
+        (query_batch_size, n_neighbors)
+    )
 
     # Run KNN task
-    nn_task = context.create_manual_task(user_lib.cffi.RAFT_KNN,
-                                         launch_domain=Rect((n_parts, 1)))
+    nn_task = context.create_manual_task(
+        user_lib.cffi.RAFT_KNN, launch_domain=Rect((n_parts, 1))
+    )
     nn_task.add_scalar_arg(n_neighbors, types.int64)
     nn_task.add_scalar_arg(metric, types.string)
     nn_task.add_input(index_store)
@@ -76,8 +80,9 @@ def run_knn(index: np.ndarray,
     distances_store = array_to_store(distances_output)
 
     # Run KNN merge task
-    merge_task = context.create_manual_task(user_lib.cffi.RAFT_KNN_MERGE,
-                                            launch_domain=Rect((1,)))
+    merge_task = context.create_manual_task(
+        user_lib.cffi.RAFT_KNN_MERGE, launch_domain=Rect((1,))
+    )
     merge_task.add_scalar_arg(query_batch_size, types.int64)
     merge_task.add_scalar_arg(n_parts, types.int64)
     merge_task.add_scalar_arg(n_neighbors, types.int64)
