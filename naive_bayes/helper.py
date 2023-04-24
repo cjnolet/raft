@@ -19,7 +19,6 @@ from typing import Any
 
 import cunumeric as num
 import pyarrow as pa
-
 from legate.core import Array, Store
 
 

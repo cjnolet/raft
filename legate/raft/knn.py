@@ -13,9 +13,8 @@
 # limitations under the License.
 #
 
-import numpy as np
-
 import legate.core.types as types
+import numpy as np
 from legate.core import Rect
 
 from .core import as_array, as_store

@@ -17,7 +17,6 @@ from dataclasses import dataclass
 
 import numpy as np
 import pyarrow as pa
-
 from legate.core import Store
 from legate.core._legion.future import Future
 

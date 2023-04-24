@@ -1,5 +1,6 @@
 import legate.core.types as ty
 from legate.core import Store
+
 from legate.raft.array_api import fill
 from legate.raft.cffi import OpCode
 from legate.raft.library import user_context as context

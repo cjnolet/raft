@@ -16,11 +16,11 @@
 
 from numbers import Number
 
+import legate.core.types as ty
 import numpy as np
 import pyarrow as pa
-
-import legate.core.types as ty
 from legate.core import Store
+
 from legate.raft.cffi import OpCode
 from legate.raft.library import user_context as context
 from legate.raft.util import promote
