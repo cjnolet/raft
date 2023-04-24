@@ -43,4 +43,5 @@ set(BUILD_SHARED_LIBS ON)
 legate_add_cpp_subdirectory(cpp/src TARGET legate_raft EXPORT legate_raft-export)
 
 # Python layer
-add_subdirectory(legate)
+include(helper_functions.cmake)
+legate_python_library_template(legate/raft)
