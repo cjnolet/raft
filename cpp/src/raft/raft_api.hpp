@@ -38,3 +38,18 @@ void raft_knn_merge(size_t n_samples,
                     const float* in_dist,
                     idx_t* out_ind,
                     float* out_dist);
+
+
+template<typename VALUE_TYPE, typename INDEX_TYPE, typename LABEL_TYPE>
+void count_features_coo(VALUE_TYPE* out,
+                        const INDEX_TYPE* rows,
+                        const INDEX_TYPE* cols,
+                        const VALUE_TYPE* vals,
+                        int nnz,
+                        int n_rows,
+                        int n_cols,
+                        const LABEL_TYPE* labels,
+                        // const VALUE_TYPE* weights,
+                        // bool has_weights,
+                        int n_features,
+                        bool square);

@@ -4,6 +4,7 @@ add_library(
         legate_raft
 
         # RAFT API Wrappers
+        raft/count_features_coo.cu
         # raft/histogram.cu
         # raft/distance.cu
         raft/raft_kmeans.cu

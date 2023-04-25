@@ -73,10 +73,10 @@ class ConvertTask : public Task<ConvertTask, CONVERT> {
                         output, input
                     );
                 default:
-                    throw(output.code()); // output type not supported
+                    throw(std::runtime_error("Cannot convert to that output type."));
             }
         default:
-            throw(input.code()); // input type not supported
+            throw(std::runtime_error("Cannot convert from this input type."));
     }
   }
 };

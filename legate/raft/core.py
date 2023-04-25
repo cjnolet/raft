@@ -15,10 +15,11 @@
 
 from dataclasses import dataclass
 from numbers import Number
+from typing import TypeAlias
 
 import numpy as np
 import pyarrow as pa
-from legate.core import Store
+from legate.core import Store, types as ty
 from legate.core._legion.future import Future
 
 from .cffi import OpCode
@@ -87,9 +88,31 @@ def as_scalar(store: Store) -> Number:
     return array.item()
 
 
-def convert(input: Store, dtype: pa.DataType) -> Store:
-    dtype = context.type_system[dtype]
-    result = context.create_store(dtype, input.shape)
+_NativeLegateType: TypeAlias = ty._Dtype | pa.DataType
+DataType: TypeAlias = type | np.dtype | _NativeLegateType
+
+
+def _determine_dtype(dtype: DataType) -> pa.DataType:
+    if type(dtype) in (ty._Dtype, pa.DataType):
+        return dtype
+    elif type(dtype) is np.dtype:
+        return pa.from_numpy_dtype(dtype)
+    elif dtype is int:
+        return ty.int64
+    elif dtype is float:
+        return ty.float64
+    elif dtype is bool:
+        return ty.bool_
+    else:
+        raise ValueError(f"Unsupported dtype: {dtype} ({type(dtype)})")
+
+
+def convert(input: Store, dtype: DataType) -> Store:
+    target_dtype = _determine_dtype(dtype)
+    if _determine_dtype(input.type) == target_dtype:
+        return input
+
+    result = context.create_store(target_dtype, input.shape)
     task = context.create_auto_task(OpCode.CONVERT)
     task.add_input(input)
     task.add_output(result)
