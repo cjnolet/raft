@@ -5,12 +5,17 @@ Currently a sharing ground for building legate-enabled versions of naive bayes, 
 
 ## Build
 
-1. Build and install `legate.core` using [these instructions](https://github.com/nv-legate/legate.core#how-do-i-install-legate)
+1. Build and install `legate.core` using [these instructions](https://github.com/nv-legate/legate.core#how-do-i-install-legate).
+
+    Most recently tested against _branch-23.05_ (`d756ff9`).
+
 
 2. Install RAFT into your `legate` conda environment:
-```bash
-mamba install -c conda-forge -c rapidsai-nightly -c nvidia libraft==23.04*
-```
+
+    ```bash
+    mamba install -c conda-forge -c rapidsai-nightly -c nvidia libraft==23.04*
+    ```
+
 2. Use `build.sh` to build this repository.
 
 ## Notes
