@@ -120,7 +120,6 @@ def _csr_mm(A: CSRStore, B: Store) -> Store:
     result_shape = (m, p)
 
     C = fill(result_shape, 0, A.type)
-    C_promoted = C.promote(1, n)  # (m, n, p)
 
     task = context.create_auto_task(OpCode.SPARSE_CSR_MM)
     task.add_input(A.data)
@@ -137,7 +136,7 @@ def _csr_mm(A: CSRStore, B: Store) -> Store:
     task.add_input(B)
     task.add_broadcast(B)
 
-    task.add_reduction(C_promoted, ty.ReductionOp.ADD)
+    task.add_reduction(C, ty.ReductionOp.ADD)
 
     task.execute()
 

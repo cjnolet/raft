@@ -43,7 +43,7 @@ struct sparse_csr_mm_fn {
 
     auto p = B.shape<2>().hi[1] + 1;
     auto B_acc = B.read_accessor<VAL, 2>();
-    auto C_acc = C.reduce_accessor<legate::SumReduction<VAL>, true, 3>();
+    auto C_acc = C.reduce_accessor<legate::SumReduction<VAL>, true, 2>();
 
     for (legate::PointInRectIterator<1> it(shape); it.valid(); ++it) {
       auto i = it[0]; // row  [0, m]
@@ -52,7 +52,7 @@ struct sparse_csr_mm_fn {
         auto A_val = Ax_acc[jj];
         for (int32_t k = 0; k < p; ++k) {  // [0, p]
           auto B_val = B_acc[{j, k}];
-          C_acc.reduce({i, j, k}, A_val * B_val);
+          C_acc.reduce({i, k}, A_val * B_val);
         }
       }
     }
