@@ -130,7 +130,7 @@ def _csr_mm(A: CSRStore, B: Store) -> Store:
     task.add_input(A.indptr)
 
     # TODO: replace broadcasts with constraints once that's possible
-    # task.add_alignment(A.indices, A.data)
+    task.add_alignment(A.indices, A.data)
     task.add_broadcast(A.indices)
     task.add_broadcast(A.indptr)
 
