@@ -15,6 +15,7 @@
  */
 
 #pragma once
+
 #include <raft/core/logger.hpp>
 #include <raft/cluster/kmeans.cuh>
 #include <raft/cluster/kmeans_types.hpp>

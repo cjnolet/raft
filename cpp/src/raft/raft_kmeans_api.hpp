@@ -14,50 +14,21 @@
  * limitations under the License.
  */
 
-#include "kmeans_mnmg_impl.cuh"
-#include <raft/cluster/kmeans_types.hpp>
+#pragma once
 
 namespace kmeans {
 // ----------------------------- fit ---------------------------------//
 
-    void fit(const raft::handle_t& handle,
-             const raft::cluster::KMeansParams& params,
-             const float* X,
-             int n_samples,
-             int n_features,
-             const float* sample_weight,
-             float* centroids,
-             float& inertia,
-             int& n_iter);
+    template<typename T, typename IdxT>
+    void fit(void* comms,
+             int k,
+             const T* X,
+             IdxT n_samples,
+             IdxT n_features,
+             const T* sample_weight,
+             T* centroids,
+             T& inertia,
+             IdxT& n_iter);
 
-    void fit(const raft::handle_t& handle,
-             const raft::cluster::KMeansParams& params,
-             const double* X,
-             int n_samples,
-             int n_features,
-             const double* sample_weight,
-             double* centroids,
-             double& inertia,
-             int& n_iter);
-
-    void fit(const raft::handle_t& handle,
-             const raft::cluster::KMeansParams& params,
-             const float* X,
-             int64_t n_samples,
-             int64_t n_features,
-             const float* sample_weight,
-             float* centroids,
-             float& inertia,
-             int64_t& n_iter);
-
-    void fit(const raft::handle_t& handle,
-             const raft::cluster::KMeansParams& params,
-             const double* X,
-             int64_t n_samples,
-             int64_t n_features,
-             const double* sample_weight,
-             double* centroids,
-             double& inertia,
-             int64_t& n_iter);
 
 };  // end namespace kmeans

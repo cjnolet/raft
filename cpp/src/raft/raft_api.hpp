@@ -15,6 +15,7 @@
  */
 
 #pragma once
+
 #include <string>
 
 template<typename idx_t, typename value_t>
