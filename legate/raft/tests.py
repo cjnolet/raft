@@ -2,9 +2,12 @@ import numpy as np
 from hypothesis import assume, example, given, note, settings
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import array_shapes
+from numpy.testing import assert_array_equal
+from scipy.sparse import csr_array
 
 import pytest
 
+from .sparse import CSRStore, as_sparse_store
 from .util import broadcast_shape, promote
 
 
@@ -55,3 +58,42 @@ def test_promote(shapes):
         promoted = list(from_shape)
         promote(from_shape, to_shape, lambda dim, size: promoted.insert(dim, size))
         assert tuple(promoted) == to_shape
+
+
+def test_csr_store_from_csr_array():
+    A = csr_array(
+        [
+            [0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0],
+            [0, 2, 3, 0, 0],
+            [0, 0, 0, 4, 0],
+        ]
+    )
+
+    A_store = CSRStore.from_sparse_array(A)
+    assert_array_equal(A.todense(), A_store.to_sparse_array().todense())
+
+
+def test_csr_matmat():
+    A = csr_array(
+        [
+            [0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0],
+            [0, 2, 3, 0, 0],
+            [0, 0, 0, 4, 0],
+        ]
+    )
+
+    B = csr_array(
+        [
+            [1, 0, 0, 0, 0],
+            [0, 2, 3, 0, 0],
+            [0, 0, 0, 4, 0],
+            [0, 0, 0, 5, 6],
+        ]
+    )
+
+    C = A @ B
+    C_store = as_sparse_store(A) @ as_sparse_store(B)
+
+    assert_array_equal(C.todense(), C_store.to_sparse_array().todense())

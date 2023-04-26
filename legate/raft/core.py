@@ -14,6 +14,7 @@
 #
 
 from dataclasses import dataclass
+from numbers import Number
 
 import numpy as np
 import pyarrow as pa
@@ -80,6 +81,12 @@ def as_array(store: Store) -> np.ndarray:
         return result
 
 
+def as_scalar(store: Store) -> Number:
+    array = as_array(store)
+    assert array.ndim == 1 and array.shape == (1,)
+    return array.item()
+
+
 def convert(input: Store, dtype: pa.DataType) -> Store:
     dtype = context.type_system[dtype]
     result = context.create_store(dtype, input.shape)
@@ -90,3 +97,18 @@ def convert(input: Store, dtype: pa.DataType) -> Store:
     task.execute()
 
     return result
+
+
+def to_scalar(input: Store) -> Number:
+    """Extracts a Python scalar value from a Legate store
+       encapsulating a single scalar
+
+    Args:
+        input (Store): The Legate store encapsulating a scalar
+
+    Returns:
+        number: A Python scalar
+    """
+    # This operation blocks until the data in the Store
+    # is available and correct
+    return as_array(input)[0]

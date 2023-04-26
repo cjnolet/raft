@@ -12,22 +12,29 @@ add_library(
 
         # Legate tasks
         task/add.cc
+        task/argmax.cc
         # task/compute_1nn.cc
         task/add_constant.cc
         task/bincount.cc
         task/categorize.cc
         task/convert.cc
+        task/count_features.cc
         task/exp.cc
         task/fill.cc
         task/find_max.cc
         task/histogram.cc
         task/kmeans_fit_task.cc
-        # task/knn_task.cc
+        task/invert_labels.cc
         # task/knn_merge_task.cc
+        # task/knn_task.cc
         task/log.cc
+        task/map_labels.cc
         task/matmul.cc
         task/mul.cc
+        task/range.cc
+        task/sparse_matmul.cc
         task/sum_over_axis.cc
+        task/unique.cc
 
         # Library templates
         ${TEMPLATE_SOURCES}

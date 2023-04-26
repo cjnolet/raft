@@ -2,7 +2,9 @@ import legate.core.types as ty
 from legate.core import Store
 
 from legate.raft.array_api import fill
+from legate.raft.array_api import max as lg_max
 from legate.raft.cffi import OpCode
+from legate.raft.core import as_scalar
 from legate.raft.library import user_context as context
 
 
@@ -74,7 +76,7 @@ def matmul(rhs1: Store, rhs2: Store) -> Store:
     return result
 
 
-def bincount(input: Store, num_bins: int) -> Store:
+def bincount(input: Store, num_bins: int | None = None) -> Store:
     """
     Counts the occurrences of each bin index
     Parameters
@@ -88,6 +90,9 @@ def bincount(input: Store, num_bins: int) -> Store:
     Store
         Counting result
     """
+    if num_bins is None:
+        num_bins = as_scalar(lg_max(input, axis=0)) + 1
+
     result = fill((num_bins,), 0, ty.uint64)
 
     task = context.create_auto_task(OpCode.BINCOUNT)

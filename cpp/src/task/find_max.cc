@@ -75,11 +75,30 @@ class FindMaxTask : public Task<FindMaxTask, FIND_MAX> {
     auto& output = context.reductions()[0];
 
     switch(input.code()) {
-      case legate::LegateTypeCode::DOUBLE_LT: {
+      case legate::LegateTypeCode::INT8_LT:
+        return legate::dim_dispatch(input.dim(), find_max_fn_outer<legate::LegateTypeCode::INT8_LT>{}, output, input);
+      case legate::LegateTypeCode::INT16_LT:
+        return legate::dim_dispatch(input.dim(), find_max_fn_outer<legate::LegateTypeCode::INT16_LT>{}, output, input);
+      case legate::LegateTypeCode::INT32_LT:
+        return legate::dim_dispatch(input.dim(), find_max_fn_outer<legate::LegateTypeCode::INT32_LT>{}, output, input);
+      case legate::LegateTypeCode::INT64_LT:
+        return legate::dim_dispatch(input.dim(), find_max_fn_outer<legate::LegateTypeCode::INT64_LT>{}, output, input);
+      case legate::LegateTypeCode::UINT8_LT:
+        return legate::dim_dispatch(input.dim(), find_max_fn_outer<legate::LegateTypeCode::UINT8_LT>{}, output, input);
+      case legate::LegateTypeCode::UINT16_LT:
+        return legate::dim_dispatch(input.dim(), find_max_fn_outer<legate::LegateTypeCode::UINT16_LT>{}, output, input);
+      case legate::LegateTypeCode::UINT32_LT:
+        return legate::dim_dispatch(input.dim(), find_max_fn_outer<legate::LegateTypeCode::UINT32_LT>{}, output, input);
+      case legate::LegateTypeCode::UINT64_LT:
+        return legate::dim_dispatch(input.dim(), find_max_fn_outer<legate::LegateTypeCode::UINT64_LT>{}, output, input);
+      case legate::LegateTypeCode::HALF_LT:
+        return legate::dim_dispatch(input.dim(), find_max_fn_outer<legate::LegateTypeCode::HALF_LT>{}, output, input);
+      case legate::LegateTypeCode::FLOAT_LT:
+        return legate::dim_dispatch(input.dim(), find_max_fn_outer<legate::LegateTypeCode::FLOAT_LT>{}, output, input);
+      case legate::LegateTypeCode::DOUBLE_LT:
         return legate::dim_dispatch(input.dim(), find_max_fn_outer<legate::LegateTypeCode::DOUBLE_LT>{}, output, input);
       default:
-        throw("Input type not supported.");
-      }
+        throw std::runtime_error("Input type is not supported.");
     }
   }
 };

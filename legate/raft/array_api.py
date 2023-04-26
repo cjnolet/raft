@@ -34,12 +34,43 @@ def fill(shape, fill_value, dtype=None) -> Store:
             fill_value = np.asanyarray(fill_value)
             dtype = pa.from_numpy_dtype(fill_value.dtype)
 
-    result = context.create_store(dtype, shape)
+    result = context.create_store(dtype, shape, optimize_scalar=(shape == tuple()))
     assert result.type == dtype
 
     task = context.create_auto_task(OpCode.FILL)
     task.add_output(result)
     task.add_scalar_arg(fill_value, result.type)
+    task.execute()
+
+    return result
+
+
+def srange(start, stop=None, step=None, dtype=None) -> Store:
+    if stop is None:
+        stop = start
+        start = type(stop)(0)
+    if step is None:
+        step = type(stop)(1)
+
+    assert type(start) == type(stop) == type(step)
+
+    if dtype is None:
+        try:
+            dtype = pa.from_numpy_dtype(stop.dtype)
+        except AttributeError:
+            stop = np.asanyarray(stop)
+            dtype = pa.from_numpy_dtype(stop.dtype)
+
+    size = (stop - start) // step
+    shape = (size,)
+
+    result = context.create_store(dtype, shape, optimize_scalar=(shape == (1,)))
+    assert result.type == dtype
+
+    task = context.create_auto_task(OpCode.RANGE)
+    task.add_output(result)
+    task.add_scalar_arg(start, result.type)
+    task.add_scalar_arg(step, result.type)
     task.execute()
 
     return result
@@ -205,7 +236,11 @@ def subtract(x1: Store | Number, x2: Store | Number) -> Store | Number:
 def max(x: Store, axis: int) -> Number:
     sanitized = _sanitize_axis(axis, x.ndim)
 
-    limit_min = np.finfo(x.type.type.to_pandas_dtype()).min
+    try:
+        limit_min = np.finfo(x.type.type.to_pandas_dtype()).min
+    except ValueError:
+        limit_min = np.iinfo(x.type.type.to_pandas_dtype()).min
+
     res_shape = tuple(ext for dim, ext in enumerate(x.shape) if dim != sanitized)
     result = fill(res_shape, limit_min, x.type)
 
@@ -220,3 +255,61 @@ def max(x: Store, axis: int) -> Number:
     task.execute()
 
     return result
+
+
+def argmax(x: Store, axis: int) -> Store:
+    if x.ndim != 2:
+        raise NotImplementedError("argmax() only supports 2-dimensional arrays")
+    if axis != 1:
+        raise NotImplementedError("argmax() can only reduce on axis=1")
+
+    # raise NotImplementedError
+
+    result_shape = (x.shape[0],)
+    result = fill(result_shape, 0, ty.int64)
+    result = result.promote(1, x.shape[1])
+
+    task = context.create_auto_task(OpCode.ARG_MAX)
+    task.add_input(x)
+    task.add_reduction(result, ty.ReductionOp.ADD)
+    task.add_alignment(x, result)
+    task.execute()
+
+    return result.project(1, 0)
+
+
+def unique(input: Store, radix: int = 4) -> Store:
+    """
+    Finds unique elements in the input and returns them in a store
+
+    Parameters
+    ----------
+    input : Store
+        Input
+
+    Returns
+    -------
+    Store
+        Result that contains only the unique elements of the input
+    """
+
+    if input.ndim > 1:
+        raise ValueError("`unique` accepts only 1D stores")
+
+    dtype = input.type.type
+    # if num.dtype(dtype.to_pandas_dtype()).kind in ("f", "c"):
+    #     raise ValueError(
+    #         "`unique` doesn't support floating point or complex numbers"
+    #     )
+
+    # Create an unbound store to collect local results
+    result = context.create_store(dtype, shape=None, ndim=1)
+
+    task = context.create_auto_task(OpCode.UNIQUE)
+    task.add_input(input)
+    task.add_output(result)
+
+    task.execute()
+
+    # Perform global reduction using a reduction tree
+    return context.tree_reduce(OpCode.UNIQUE, result, radix=radix)
