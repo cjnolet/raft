@@ -23,6 +23,7 @@ add_library(
         task/fill.cc
         task/find_max.cc
         task/histogram.cc
+        task/kmeans_fit_task.cc
         task/invert_labels.cc
         # task/knn_merge_task.cc
         # task/knn_task.cc
@@ -46,7 +47,7 @@ target_include_directories(legate_raft
         $<INSTALL_INTERFACE:include>
         )
 
-target_link_libraries(legate_raft PRIVATE legate::core raft::raft raft::compiled)
+target_link_libraries(legate_raft PRIVATE legate::core raft::raft raft::compiled raft::distributed)
 
 
 install(TARGETS legate_raft

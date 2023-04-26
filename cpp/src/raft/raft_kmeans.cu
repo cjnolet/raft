@@ -16,62 +16,60 @@
 
 #include <raft/cluster/specializations.cuh>
 
+#include <raft/core/handle.hpp>
+#include "raft_kmeans_api.hpp"
 #include "kmeans_mnmg_impl.cuh"
+#include <raft/comms/std_comms.hpp>
+
 #include <raft/cluster/kmeans_types.hpp>
 
 namespace kmeans {
 // ----------------------------- fit ---------------------------------//
 
-        void fit(const raft::handle_t& handle,
-                 const raft::cluster::KMeansParams& params,
-                 const float* X,
-                 int n_samples,
-                 int n_features,
-                 const float* sample_weight,
-                 float* centroids,
-                 float& inertia,
-                 int& n_iter)
+        template<typename T, typename IdxT>
+        void fit(void* comms,
+                 int k,
+                 const T* X,
+                 IdxT n_samples,
+                 IdxT n_features,
+                 const T* sample_weight,
+                 T* centroids,
+                 T& inertia,
+                 IdxT& n_iter)
         {
-            impl::fit(handle, params, X, n_samples, n_features, sample_weight, centroids, inertia, n_iter);
+            raft::handle_t handle;
+            ncclComm_t nccl_comm = *(ncclComm_t *)comms;
+            int n_ranks;
+            ncclCommCount(nccl_comm, &n_ranks);
+            raft::cluster::KMeansParams params;
+            params.n_clusters = k;
+
+            int rank;
+            ncclCommUserRank(nccl_comm, &rank);
+            raft::comms::build_comms_nccl_only(&handle, nccl_comm, n_ranks, rank);
+            impl::fit(handle, params, X, n_samples, n_features,
+                      sample_weight, centroids, inertia, n_iter);
         }
 
-        void fit(const raft::handle_t& handle,
-                 const raft::cluster::KMeansParams& params,
-                 const double* X,
-                 int n_samples,
-                 int n_features,
-                 const double* sample_weight,
-                 double* centroids,
-                 double& inertia,
-                 int& n_iter)
-        {
-            impl::fit(handle, params, X, n_samples, n_features, sample_weight, centroids, inertia, n_iter);
-        }
+    template void fit(void*,
+             int,
+             const float* ,
+             int,
+             int ,
+             const float* ,
+             float*,
+             float&,
+             int&);
 
-        void fit(const raft::handle_t& handle,
-                 const raft::cluster::KMeansParams& params,
-                 const float* X,
-                 int64_t n_samples,
-                 int64_t n_features,
-                 const float* sample_weight,
-                 float* centroids,
-                 float& inertia,
-                 int64_t& n_iter)
-        {
-            impl::fit(handle, params, X, n_samples, n_features, sample_weight, centroids, inertia, n_iter);
-        }
+    template void fit(void*,
+             int,
+             const double*,
+             int,
+             int,
+             const double*,
+             double*,
+             double&,
+             int&);
 
-        void fit(const raft::handle_t& handle,
-                 const raft::cluster::KMeansParams& params,
-                 const double* X,
-                 int64_t n_samples,
-                 int64_t n_features,
-                 const double* sample_weight,
-                 double* centroids,
-                 double& inertia,
-                 int64_t& n_iter)
-        {
-            impl::fit(handle, params, X, n_samples, n_features, sample_weight, centroids, inertia, n_iter);
-        }
 
 };  // end namespace kmeans
