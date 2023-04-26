@@ -19,7 +19,8 @@ from typing import TypeAlias
 
 import numpy as np
 import pyarrow as pa
-from legate.core import Store, types as ty
+from legate.core import Store
+from legate.core import types as ty
 from legate.core._legion.future import Future
 
 from .cffi import OpCode
