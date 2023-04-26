@@ -14,6 +14,7 @@
 #
 
 
+import math
 from numbers import Number
 
 import legate.core.types as ty
@@ -134,7 +135,10 @@ def _add_constant(input: Store, value: Number) -> Store:
     return result
 
 
-def log(input: Store) -> Store:
+def log(input: Store | Number) -> Store | Number:
+    if isinstance(input, Number):
+        return math.log(input)
+
     result = context.create_store(input.type, input.shape)
 
     task = context.create_auto_task(OpCode.LOG)
