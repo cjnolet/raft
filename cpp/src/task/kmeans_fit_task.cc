@@ -14,20 +14,36 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
             printf("Starting kmeans task\n");
             int k = context.scalars()[0].value<int>();
 
+            printf("k=%d\n", k);
+
             auto& X = context.inputs()[0];
 //            auto& labels = context.outputs()[1];
+
+            printf("Got X\n");
             auto& centroids = context.outputs()[0];  // centroids should be allocated locally.
 
+            printf("Got centroids!\n");
+
             void* nccl_com = context.communicators()[0].get<void*>();
+
+            printf("Got NCCL comms!\n");
 
             int n_samples = (X.shape<2>().hi[0] + 1) - X.shape<2>().lo[0];
             int n_features = X.shape<2>().hi[1] + 1;
 
+            printf("n_samples=%d, n_features=%d\n", n_samples, n_features);
+
             // The offset of the current partition from the start of the store
             // is used to obtain the pointer to the start of the partition.
-            uint64_t offset = X.shape<2>().lo[0];
-            const float* X_read = X.read_accessor<float, 2>().ptr(Legion::DomainPoint(0));
-            float* centroids_write = centroids.write_accessor<float, 2>().ptr(Legion::DomainPoint(offset));
+            uint64_t X_offset = X.shape<2>().lo[0];
+            uint64_t centroids_offset = centroids.shape<2>().lo[0];
+
+            const float* X_read = X.read_accessor<float, 2>().ptr(Legion::DomainPoint(X_offset));
+
+            printf("Got X_read!\n");
+            float* centroids_write = centroids.write_accessor<float, 2>().ptr(Legion::DomainPoint(centroids_offset));
+
+            printf("Got centroids_write!\n");
 //            int* labels_write = labels.write_accessor<int, 2>().ptr(Legion::DomainPoint(offset));
 
             float inertia = 0;
@@ -35,9 +51,13 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
 
             const float* weights = nullptr;
 
+            printf("Invoking kmeans\n");
             kmeans::fit<float, int>(nccl_com, k, X_read,
                      n_samples, n_features, weights,
                     centroids_write, inertia, n_iter);
+
+            printf("Done kmeans task\n");
+
         }
     };
 
@@ -52,3 +72,4 @@ namespace  // unnamed
     }
 
 }  // namespace
+

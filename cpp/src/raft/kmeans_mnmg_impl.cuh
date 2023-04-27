@@ -35,6 +35,7 @@
 
 #include <cstdint>
 
+#define RAFT_NAME "RAFT"
 #define RAFT_LOG_KMEANS(handle, fmt, ...)               \
   do {                                                  \
     bool isRoot = true;                                 \
@@ -43,7 +44,7 @@
       const int my_rank = comm.get_rank();              \
       isRoot            = my_rank == 0;                 \
     }                                                   \
-    if (isRoot) { RAFT_LOG_DEBUG(fmt, ##__VA_ARGS__); } \
+    if (isRoot) { RAFT_LOG_INFO(fmt, ##__VA_ARGS__); } \
   } while (0)
 
     namespace kmeans {
@@ -182,6 +183,8 @@
                     }
 
                     // 1.3 - Communicate the initial centroid chosen by rank-r' to all other ranks
+
+		    printf("rank %d About to call bcast\n", my_rank);
                     comm.bcast<DataT>(initialCentroid.data_handle(), initialCentroid.size(), rp, stream);
 
                     // device buffer to flag the sample that is chosen as initial centroid
@@ -733,11 +736,13 @@
                 {
                     cudaStream_t stream = handle.get_stream();
 
-                    ASSERT(n_local_samples > 0, "# of samples must be > 0");
-                    ASSERT(params.oversampling_factor > 0,
+                    RAFT_EXPECTS(n_local_samples > 0, "# of samples must be > 0");
+                    RAFT_EXPECTS(params.oversampling_factor > 0,
                            "oversampling factor must be > 0 (requested %d)",
                            (int)params.oversampling_factor);
-//                    ASSERT(is_device_or_managed_type(X), "input data must be device accessible");
+
+		    printf("is device accessible: %d\n", raft::get_device_for_address(X));
+                    RAFT_EXPECTS(raft::get_device_for_address(X) > -1, "input data must be device accessible");
 
                     auto n_clusters = params.n_clusters;
                     auto data   = raft::make_device_matrix_view<const DataT, IndexT>(X, n_local_samples, n_features);

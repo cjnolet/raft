@@ -46,9 +46,17 @@ namespace kmeans {
 
             int rank;
             ncclCommUserRank(nccl_comm, &rank);
+            printf("NCCL Rank: %d, n_ranks=%d\n", rank, n_ranks);
+
             raft::comms::build_comms_nccl_only(&handle, nccl_comm, n_ranks, rank);
+
+	    printf("Comms built and injected on handle\n");
             impl::fit(handle, params, X, n_samples, n_features,
                       sample_weight, centroids, inertia, n_iter);
+
+	    printf("Done calling impl::fit. Calling sync...\n");
+
+	    handle.sync_stream();
         }
 
     template void fit(void*,

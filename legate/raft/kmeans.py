@@ -37,12 +37,14 @@ class KMeans:
 
         # Setup buffer stores
         n_parts = X_store.partition.color_shape[0]
-        centroids_buf = np.zeros((k, n_features), dtype=np.float32)
+
+        print("n_parts " + str( n_parts))
+        centroids_buf = np.zeros((k*n_parts, n_features), dtype=np.float32)
         # labels_buf = np.zeros((X_row_part_size*n_parts, 1), dtype=np.int32)
 
         # TODO: Each task is going to end up computing this same thing individually. Need
         # to figure out how to grab it only from a single task.
-        centroids_store = as_store(centroids_buf)
+        centroids_store = as_store(centroids_buf).partition_by_tiling((k, n_features))
         # labels_store = as_store(labels_buf).partition_by_tiling((X_row_part_size, 1))
 
         # Run KMeans Fit task
