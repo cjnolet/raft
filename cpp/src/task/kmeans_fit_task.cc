@@ -15,7 +15,7 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
             int k = context.scalars()[0].value<int>();
 
             auto& X = context.inputs()[0];
-            auto& labels = context.outputs()[1];
+//            auto& labels = context.outputs()[1];
             auto& centroids = context.outputs()[0];  // centroids should be allocated locally.
 
             void* nccl_com = context.communicators()[0].get<void*>();
@@ -28,7 +28,7 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
             uint64_t offset = X.shape<2>().lo[0];
             const float* X_read = X.read_accessor<float, 2>().ptr(Legion::DomainPoint(0));
             float* centroids_write = centroids.write_accessor<float, 2>().ptr(Legion::DomainPoint(offset));
-            int* labels_write = labels.write_accessor<int, 2>().ptr(Legion::DomainPoint(offset));
+//            int* labels_write = labels.write_accessor<int, 2>().ptr(Legion::DomainPoint(offset));
 
             float inertia = 0;
             int n_iter;
