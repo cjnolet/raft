@@ -21,35 +21,41 @@ from .core import as_store, as_array
 import numpy as np
 
 
-def fit(X: np.ndarray, k: int):
+class KMeans:
 
-    # TODO: Need to figure out how to accept an existing store
-    X_row_part_size = 500
-    n_features = X.shape[1]
+    def __init__(self):
+        self.centroids_ = None
 
-    # Setup X store
-    X_store = as_store(X).partition_by_tiling((X_row_part_size, n_features))
+    def fit(self, X: np.ndarray, k: int):
 
-    # Setup buffer stores
-    n_parts = X_store.partition.color_shape[0]
-    centroids_buf = np.zeros((k, n_features), dtype=np.float32)
-    labels_buf = np.zeros((X_row_part_size*n_parts, 1), dtype=np.int32)
+        # TODO: Need to figure out how to accept an existing store
+        X_row_part_size = 50
+        n_features = X.shape[1]
 
-    # TODO: Each task is going to end up computing this same thing individually. Need
-    # to figure out how to grab it only from a single task.
-    centroids_store = as_store(centroids_buf)
-    labels_store = as_store(labels_buf).partition_by_tiling((X_row_part_size, 1))
+        # Setup X store
+        X_store = as_store(X).partition_by_tiling((X_row_part_size, n_features))
 
-    # Run KMeans Fit task
-    kmeans_fit_task = context.create_manual_task(user_lib.cffi.RAFT_KMEANS_FIT,
-                                                 launch_domain=Rect((n_parts, 1)))
+        # Setup buffer stores
+        n_parts = X_store.partition.color_shape[0]
+        centroids_buf = np.zeros((k, n_features), dtype=np.float32)
+        # labels_buf = np.zeros((X_row_part_size*n_parts, 1), dtype=np.int32)
 
-    # NOTE: The configuration is order dependent
-    kmeans_fit_task.add_scalar_arg(k, types.int32)
-    kmeans_fit_task.add_input(X_store)
-    # kmeans_fit_task.add_output(labels_store)
-    kmeans_fit_task.add_output(centroids_store)
-    # kmeans_fit_task.add_alignment(X_store, labels_store)
-    kmeans_fit_task.add_nccl_communicator()
-    kmeans_fit_task.execute()
-    return labels_store
+        # TODO: Each task is going to end up computing this same thing individually. Need
+        # to figure out how to grab it only from a single task.
+        centroids_store = as_store(centroids_buf)
+        # labels_store = as_store(labels_buf).partition_by_tiling((X_row_part_size, 1))
+
+        # Run KMeans Fit task
+        kmeans_fit_task = context.create_manual_task(user_lib.cffi.RAFT_KMEANS_FIT,
+                                                     launch_domain=Rect((n_parts, 1)))
+
+        # NOTE: The configuration is order dependent
+        kmeans_fit_task.add_scalar_arg(k, types.int32)
+        kmeans_fit_task.add_input(X_store)
+        # kmeans_fit_task.add_output(labels_store)
+        kmeans_fit_task.add_output(centroids_store)
+        # kmeans_fit_task.add_alignment(X_store, labels_store)
+        kmeans_fit_task.add_nccl_communicator()
+        kmeans_fit_task.execute()
+        self.centroids_ = centroids_store
+        return self
