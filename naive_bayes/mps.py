@@ -42,7 +42,9 @@ class MultinomialNB:
         self.feature_log_prob_ = T(subtract(T(log(smoothed_fc)), log(smoothed_cc)))
 
         self.class_count_ = bincount(Y, num_bins=self.n_classes_)
-        self.class_log_prior_ = fill(self.n_classes_, -log(self.n_classes_))
+        self.class_log_prior_ = fill(
+            self.n_classes_, -log(self.n_classes_), dtype=self.feature_log_prob_.type
+        )
 
     def predict(self, X):
         X = CSRStore.from_sparse_array(X).to_type(self.feature_log_prob_.type)
