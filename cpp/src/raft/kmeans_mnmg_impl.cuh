@@ -134,6 +134,10 @@
                                         raft::device_matrix_view<DataT, IndexT> centroidsRawData,
                                         rmm::device_uvector<char>& workspace)
                 {
+
+			printf("Inside kmeans plus plus\n");
+
+			fflush(stdout);
                     const auto& comm    = handle.get_comms();
                     cudaStream_t stream = handle.get_stream();
                     const int my_rank   = comm.get_rank();
@@ -190,6 +194,10 @@
                     comm.bcast<DataT>(initialCentroid.data_handle(), initialCentroid.size(), rp, stream);
 		    comm.group_end();
 
+
+		    printf("rank %d after calling bcast\n", my_rank);
+		    fflush(stdout);
+
                     // device buffer to flag the sample that is chosen as initial centroid
                     auto isSampleCentroid = raft::make_device_vector<std::uint8_t, IndexT>(handle, n_samples);
 
@@ -209,6 +217,8 @@
                     rmm::device_uvector<DataT> L2NormBuf_OR_DistBuf(0, stream);
 
                     // L2 norm of X: ||x||^2
+
+		    printf("Rank %d about to call rownorm\n", my_rank);
                     auto L2NormX = raft::make_device_vector<DataT, IndexT>(handle, n_samples);
                     if (metric == raft::distance::DistanceType::L2Expanded ||
                         metric == raft::distance::DistanceType::L2SqrtExpanded) {
@@ -220,6 +230,9 @@
                                               true,
                                               stream);
                     }
+
+		    printf("Rank %d after calling rownorm\n", my_rank);
+		    fflush(stdout);
 
                     auto minClusterDistance = raft::make_device_vector<DataT, IndexT>(handle, n_samples);
                     auto uniformRands       = raft::make_device_vector<DataT, IndexT>(handle, n_samples);
