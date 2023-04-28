@@ -96,8 +96,6 @@ DataType: TypeAlias = type | np.dtype | _NativeLegateType
 def _determine_dtype(dtype: DataType) -> pa.DataType:
     if type(dtype) in (ty._Dtype, pa.DataType):
         return dtype
-    elif type(dtype) is np.dtype:
-        return pa.from_numpy_dtype(dtype)
     elif dtype is int:
         return ty.int64
     elif dtype is float:
@@ -105,7 +103,12 @@ def _determine_dtype(dtype: DataType) -> pa.DataType:
     elif dtype is bool:
         return ty.bool_
     else:
-        raise ValueError(f"Unsupported dtype: {dtype} ({type(dtype)})")
+        try:
+            return pa.from_numpy_dtype(dtype)
+        except NotImplementedError:
+            pass
+
+    raise ValueError(f"Unsupported dtype: {dtype} ({type(dtype)})")
 
 
 def convert(input: Store, dtype: DataType) -> Store:
