@@ -185,7 +185,10 @@
                     // 1.3 - Communicate the initial centroid chosen by rank-r' to all other ranks
 
 		    printf("rank %d About to call bcast\n", my_rank);
+
+		    comm.group_start();
                     comm.bcast<DataT>(initialCentroid.data_handle(), initialCentroid.size(), rp, stream);
+		    comm.group_end();
 
                     // device buffer to flag the sample that is chosen as initial centroid
                     auto isSampleCentroid = raft::make_device_vector<std::uint8_t, IndexT>(handle, n_samples);
