@@ -165,6 +165,8 @@ def exp(input: Store) -> Store:
 
 
 def _add_stores(x1: Store, x2: Store) -> Store:
+    assert x1.type == x2.type
+
     result = context.create_store(x1.type, x1.shape)
 
     task = context.create_auto_task(OpCode.ADD)
@@ -180,6 +182,8 @@ def _add_stores(x1: Store, x2: Store) -> Store:
 
 
 def _add_broadcast(x1: Store, x2: Store) -> Store:
+    assert x1.type == x2.type
+
     def func(dim, dim_size):
         nonlocal x2
         x2 = x2.promote(dim, dim_size)
