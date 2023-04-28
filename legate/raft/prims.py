@@ -21,6 +21,8 @@ from .library import user_context as context
 from .multiarray import bincount
 from .sparse import SparseStore
 
+# from .library import get_legate_runtime
+
 
 def map_labels(labels: Store, classes: Store) -> Store:
     result = context.create_store(labels.type, shape=labels.shape)
@@ -119,6 +121,11 @@ def count_features(X: SparseStore, Y: Store, n_classes: int) -> Store:
     task.add_scalar_arg(n_features, ty.uint64)
     task.add_broadcast(result)  # TODO: Replace with better constraints.
     task.add_reduction(result, ty.ReductionOp.ADD)
+
+    # runtime = get_legate_runtime()
+    # if runtime.num_gpus > 1:
+    #     task.add_nccl_communicator()
+    task.add_nccl_communicator()
 
     task.execute()
     return result

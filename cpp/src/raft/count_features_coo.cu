@@ -16,6 +16,7 @@
 
  #include <iostream>  // TODO: remove after debugging
 
+
  #include "raft_api.hpp"
 
  #include <cstdint>
@@ -76,6 +77,12 @@ void count_features_coo(value_t* out,
                         bool square)
 
 {
+  raft::device_resources handle;
+  const auto& comm    = handle.get_comms();
+  cudaStream_t stream = handle.get_stream();
+  const int my_rank   = comm.get_rank();
+  const int n_rank    = comm.get_size();
+
   int block_size = 256;  // TODO: tune
   int num_blocks = (nnz + block_size - 1) / block_size;
 
@@ -84,6 +91,9 @@ void count_features_coo(value_t* out,
     // weights, has_weights,
     n_features, square
   );
+
+  auto result_view = raft::make_device_matrix_view<value_t, index_t, raft::row_major>(out, nnz, n_features);
+  comm.allreduce(out, out, 1, raft::comms::op_t::SUM, stream);
 }
 
 template void count_features_coo(

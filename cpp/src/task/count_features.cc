@@ -78,6 +78,8 @@ struct sparse_count_features_fn_gpu {
       legate::Store& labels, legate::Store& result,
       int nnz, uint64_t n_rows, uint64_t n_cols, uint64_t n_features)
   {
+    // raft::device_resources handle;
+
     using VAL = legate::legate_type_of<CODE>;
 
     auto shape = data.shape<1>();
@@ -143,6 +145,8 @@ class SparseCountFeaturesTask : public Task<SparseCountFeaturesTask, COUNT_FEATU
 
   static void gpu_variant(legate::TaskContext& context)
   {
+    void* nccl_com = context.communicators().at(0).get<void*>();
+
     auto& X_data = context.inputs().at(0);
     auto& X_rows = context.inputs().at(1);
     auto& X_cols = context.inputs().at(2);
