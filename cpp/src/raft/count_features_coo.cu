@@ -49,14 +49,7 @@
   value_t val = vals[i];
   label_t label = labels[row];
 
-  // auto out_idx = (label * n_features) + col;
-  // auto out_idx = 0;  // works
-  // auto out_idx = 200000 - 1;  // works
-  // auto out_idx = label; // works
-  // auto out_idx = label * n_features; // works
-  // auto out_idx  = label + col; // works
-  auto out_idx = (label * n_features) + col; // fails
-  assert(out_idx < 200000);
+  auto out_idx = (label * n_features) + col;
 
   // if (has_weights) val *= weights[i];
   if (square) val *= val;
@@ -103,25 +96,24 @@ void count_features_coo(value_t* out,
     const auto & comm   = handle.get_comms();
     cudaStream_t stream = handle.get_stream();
 
-    // std::cerr << "[" << rank << "] (" << num_blocks << ", " << block_size << ")  rows:" << rows << " nnz: " << nnz << "\n";
-
-    auto buffer = raft::make_device_matrix<value_t, index_t, raft::row_major>(handle, n_classes, n_features);
+    // TODO: Use local buffer once we no longer broadcast the output array to all ranks.
+    // Using this view is not really necessary, but might make it easier for us to switch to the
+    // local buffer once that's possible.
     auto result_view = raft::make_device_matrix_view<value_t, index_t, raft::row_major>(out, n_classes, n_features);
+    // auto buffer = raft::make_device_matrix<value_t, index_t, raft::row_major>(handle, n_classes, n_features);
 
     count_features_coo_kernel<<<num_blocks, block_size, 0, stream>>>(
-      // buffer.data_handle() + rank, rows, cols, vals, nnz, n_rows, n_cols, labels,
-      // out, rows, cols, vals, nnz, n_rows, n_cols, labels,
       result_view.data_handle(), rows, cols, vals, nnz, n_rows, n_cols, labels,
+      // buffer.data_handle(), rows, cols, vals, nnz, n_rows, n_cols, labels,
       // weights, has_weights,
       n_features, square
     );
-
-    // std::cerr << "buffer: " << buffer[0][0] << "\n";
-    // comm.allreduce(buffer.data_handle(), buffer.data_handle(), 1, raft::comms::op_t::SUM, stream);
-    // raft::copy(buffer.data_handle(), out, buffer.size(), stream);
-    // raft::copy(buffer.data_handle(), result_view.data_handle(), buffer.size(), stream);
-    // std::cerr << "buffer: " << *buffer.data_handle() << "\n";
     handle.sync_stream();
+
+    // Using the allreduce approach here is currently not working as expected,
+    // the output is empty.
+    // comm.allreduce(buffer.data_handle(), buffer.data_handle(), 1, raft::comms::op_t::SUM, stream);
+    // raft::copy(buffer.data_handle(), result_view.data_handle(), buffer.size(), stream);
   } else {
     count_features_coo_kernel<<<num_blocks, block_size>>>(
       out, rows, cols, vals, nnz, n_rows, n_cols, labels,

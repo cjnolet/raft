@@ -55,7 +55,7 @@ class MultinomialNB:
 
 if __name__ == "__main__":
     from conftest import _nlp_20news
-    from numpy.testing import assert_allclose
+    from numpy.testing import assert_equal
     from sklearn.metrics import accuracy_score
     from sklearn.naive_bayes import MultinomialNB as skNB
 
@@ -75,11 +75,8 @@ if __name__ == "__main__":
     estimator.fit(X, y)
     sk_estimator.fit(X, y)
 
-    print("feature count sum (sklearn)", sk_estimator.feature_count_.sum())
-    print("feature count sum (legate) ", as_array(estimator.feature_count_).sum())
-
-    assert_allclose(as_array(estimator.feature_count_), sk_estimator.feature_count_)
-    assert_allclose(as_array(estimator.class_count_), sk_estimator.class_count_)
+    assert_equal(as_array(estimator.feature_count_), sk_estimator.feature_count_)
+    assert_equal(as_array(estimator.class_count_), sk_estimator.class_count_)
 
     y_hat = estimator.predict(X)
     sk_y_hat = sk_estimator.predict(X)
