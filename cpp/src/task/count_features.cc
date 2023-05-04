@@ -14,10 +14,11 @@
  *
  */
 
+//  #include <raft/core/device_resources.hpp>
+
 #include "../raft/raft_api.hpp"
 #include "../legate_raft.h"
 #include "legate_library.h"
-
 #include "core/utilities/dispatch.h"
 
 namespace legate_raft {
@@ -76,7 +77,9 @@ struct sparse_count_features_fn_gpu {
   void operator()(
       legate::Store& data, legate::Store& rows, legate::Store& cols,
       legate::Store& labels, legate::Store& result,
-      int nnz, uint64_t n_rows, uint64_t n_cols, uint64_t n_features)
+      int nnz, uint64_t n_rows, uint64_t n_cols,
+      uint64_t n_features, uint64_t n_classes,
+      std::vector<legate::comm::Communicator>& comms)
   {
     // raft::device_resources handle;
 
@@ -93,7 +96,17 @@ struct sparse_count_features_fn_gpu {
 
     auto data_shape = data.shape<1>();
     auto offset = data_shape.lo[0];
+    // auto result_offset = result.shape<2>().lo[0];
     auto nnz_ = data_shape.hi[0] + 1 - offset;
+
+    void * nccl_comm = 0;
+
+    std::cerr << "offset: " << offset << "\n";
+
+    if (comms.size() > 0) {
+      nccl_comm = comms[0].get<void*>();
+    }
+
 
     count_features_coo(
       result_acc.ptr(Legion::DomainPoint(0)),
@@ -103,21 +116,24 @@ struct sparse_count_features_fn_gpu {
       nnz_,
       n_rows,
       n_cols,
-      labels_acc.ptr(Legion::DomainPoint(offset)),
+      labels_acc.ptr(Legion::DomainPoint(0)),
       // NULL,
       // false,
       n_features,
-      false
+      n_classes,
+      false,
+      nccl_comm
     );
 
-    // TODO: Reduce with NCCL.
   }
 
   template <legate::LegateTypeCode CODE, std::enable_if_t<!is_supported_gpu<CODE>>* = nullptr>
   void operator()(
       legate::Store& data, legate::Store& rows, legate::Store& cols,
       legate::Store& labels, legate::Store& result,
-      int nnz, uint64_t n_rows, uint64_t n_cols, uint64_t n_features)
+      int nnz, uint64_t n_rows, uint64_t n_cols,
+      uint64_t n_features, uint64_t n_classes,
+      std::vector<legate::comm::Communicator>& comms)
   {
     LEGATE_ABORT;
   }
@@ -131,6 +147,8 @@ class SparseCountFeaturesTask : public Task<SparseCountFeaturesTask, COUNT_FEATU
   static void cpu_variant(legate::TaskContext& context)
   {
 
+    std::cerr << "# communicators: " << context.communicators().size() << "\n";
+
     auto& X_data = context.inputs().at(0);
     auto& X_rows = context.inputs().at(1);
     auto& X_cols = context.inputs().at(2);
@@ -138,14 +156,14 @@ class SparseCountFeaturesTask : public Task<SparseCountFeaturesTask, COUNT_FEATU
     auto& labels = context.inputs().at(3);
     auto n_classes = context.scalars().at(0).value<uint64_t>();
 
-    auto& result = context.reductions().at(0);
+    auto& result = context.outputs().at(0);
 
     legate::type_dispatch(X_data.code(), sparse_count_features_fn_cpu{}, X_data, X_rows, X_cols, labels, result, n_classes);
   }
 
   static void gpu_variant(legate::TaskContext& context)
   {
-    void* nccl_com = context.communicators().at(0).get<void*>();
+    std::cerr << "# communicators: " << context.communicators().size() << "\n";
 
     auto& X_data = context.inputs().at(0);
     auto& X_rows = context.inputs().at(1);
@@ -156,15 +174,24 @@ class SparseCountFeaturesTask : public Task<SparseCountFeaturesTask, COUNT_FEATU
     auto n_rows = context.scalars().at(1).value<uint64_t>();
     auto n_cols = context.scalars().at(2).value<uint64_t>();
     auto n_features = context.scalars().at(3).value<uint64_t>();
+    auto n_classes = context.scalars().at(4).value<uint64_t>();
 
+    std::cerr << "n_features:" << n_features << "\n";
 
     auto& result = context.reductions().at(0);
 
     auto nnz = X_rows.shape<1>().hi[0];
 
+    // sparse_count_features_fn_gpu{}.operator()<FLOAT_LT>(
+    //   X_data, X_rows, X_cols, labels, result,
+    //   nnz, n_rows, n_cols, n_features,
+    //   context.communicators()
+    // );
+
     legate::type_dispatch(X_data.code(), sparse_count_features_fn_gpu{},
                           X_data, X_rows, X_cols, labels, result,
-                          nnz, n_rows, n_cols, n_features);
+                          nnz, n_rows, n_cols, n_features, n_classes,
+                          context.communicators());
   }
 
 };

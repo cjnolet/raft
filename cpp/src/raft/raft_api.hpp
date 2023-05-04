@@ -52,4 +52,6 @@ void count_features_coo(VALUE_TYPE* out,
                         // const VALUE_TYPE* weights,
                         // bool has_weights,
                         int n_features,
-                        bool square);
+                        int n_classes,
+                        bool square,
+                        void*); // ncclComm_t*

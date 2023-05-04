@@ -101,6 +101,7 @@ def make_monotonic(labels: Store) -> tuple[Store, Store]:
 
 def count_features(X: SparseStore, Y: Store, n_classes: int) -> Store:
     assert X.shape[0] == Y.shape[0]
+    assert Y.type == ty.int64
 
     n_features = X.shape[1]
     output_shape = (n_classes, n_features)
@@ -119,13 +120,17 @@ def count_features(X: SparseStore, Y: Store, n_classes: int) -> Store:
     task.add_scalar_arg(n_rows, ty.uint64)
     task.add_scalar_arg(n_cols, ty.uint64)
     task.add_scalar_arg(n_features, ty.uint64)
-    task.add_broadcast(result)  # TODO: Replace with better constraints.
+    task.add_scalar_arg(n_classes, ty.uint64)
+    # TODO: Replace with better constraints.
+    task.add_broadcast(Y)
     task.add_reduction(result, ty.ReductionOp.ADD)
+    task.add_broadcast(result)
 
     # runtime = get_legate_runtime()
     # if runtime.num_gpus > 1:
     #     task.add_nccl_communicator()
     task.add_nccl_communicator()
+    # task.add_cpu_communicator()
 
     task.execute()
     return result

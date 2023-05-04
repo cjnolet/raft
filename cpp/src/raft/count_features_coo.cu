@@ -15,14 +15,14 @@
  */
 
  #include <iostream>  // TODO: remove after debugging
-
-
- #include "raft_api.hpp"
-
  #include <cstdint>
- #include <raft/core/device_resources.hpp>
- #include <raft/core/mdspan_types.hpp>
- #include <raft/core/device_mdspan.hpp>
+
+#include <raft/core/handle.hpp>
+#include <raft/comms/std_comms.hpp>
+//  #include <raft/core/device_resources.hpp>
+ #include <raft/core/device_mdarray.hpp>
+//  #include <raft/core/mdspan_types.hpp>
+//  #include <raft/core/device_mdspan.hpp>
 
 
  template<typename value_t, typename index_t, typename label_t>
@@ -49,7 +49,14 @@
   value_t val = vals[i];
   label_t label = labels[row];
 
-  auto out_idx = (label * n_features) + col;
+  // auto out_idx = (label * n_features) + col;
+  // auto out_idx = 0;  // works
+  // auto out_idx = 200000 - 1;  // works
+  // auto out_idx = label; // works
+  // auto out_idx = label * n_features; // works
+  // auto out_idx  = label + col; // works
+  auto out_idx = (label * n_features) + col; // fails
+  assert(out_idx < 200000);
 
   // if (has_weights) val *= weights[i];
   if (square) val *= val;
@@ -74,26 +81,55 @@ void count_features_coo(value_t* out,
                         // const value_t* weights,
                         // bool has_weights,
                         int n_features,
-                        bool square)
-
+                        int n_classes,
+                        bool square,
+                        void* comms)
 {
-  raft::device_resources handle;
-  const auto& comm    = handle.get_comms();
-  cudaStream_t stream = handle.get_stream();
-  const int my_rank   = comm.get_rank();
-  const int n_rank    = comm.get_size();
-
   int block_size = 256;  // TODO: tune
   int num_blocks = (nnz + block_size - 1) / block_size;
 
-  count_features_coo_kernel<<<num_blocks, block_size>>>(
-    out, rows, cols, vals, nnz, n_rows, n_cols, labels,
-    // weights, has_weights,
-    n_features, square
-  );
+  if (comms) {
+    raft::handle_t handle;
 
-  auto result_view = raft::make_device_matrix_view<value_t, index_t, raft::row_major>(out, nnz, n_features);
-  comm.allreduce(out, out, 1, raft::comms::op_t::SUM, stream);
+    ncclComm_t * comms_ptr = static_cast<ncclComm_t *>(comms);
+    ncclComm_t nccl_comm = * comms_ptr;
+
+    int n_ranks, rank;
+    ncclCommCount(nccl_comm, &n_ranks);
+    ncclCommUserRank(nccl_comm, &rank);
+
+    raft::comms::build_comms_nccl_only(&handle, nccl_comm, n_ranks, rank);
+
+    const auto & comm   = handle.get_comms();
+    cudaStream_t stream = handle.get_stream();
+
+    // std::cerr << "[" << rank << "] (" << num_blocks << ", " << block_size << ")  rows:" << rows << " nnz: " << nnz << "\n";
+
+    auto buffer = raft::make_device_matrix<value_t, index_t, raft::row_major>(handle, n_classes, n_features);
+    auto result_view = raft::make_device_matrix_view<value_t, index_t, raft::row_major>(out, n_classes, n_features);
+
+    count_features_coo_kernel<<<num_blocks, block_size, 0, stream>>>(
+      // buffer.data_handle() + rank, rows, cols, vals, nnz, n_rows, n_cols, labels,
+      // out, rows, cols, vals, nnz, n_rows, n_cols, labels,
+      result_view.data_handle(), rows, cols, vals, nnz, n_rows, n_cols, labels,
+      // weights, has_weights,
+      n_features, square
+    );
+
+    // std::cerr << "buffer: " << buffer[0][0] << "\n";
+    // comm.allreduce(buffer.data_handle(), buffer.data_handle(), 1, raft::comms::op_t::SUM, stream);
+    // raft::copy(buffer.data_handle(), out, buffer.size(), stream);
+    // raft::copy(buffer.data_handle(), result_view.data_handle(), buffer.size(), stream);
+    // std::cerr << "buffer: " << *buffer.data_handle() << "\n";
+    handle.sync_stream();
+  } else {
+    count_features_coo_kernel<<<num_blocks, block_size>>>(
+      out, rows, cols, vals, nnz, n_rows, n_cols, labels,
+      // weights, has_weights,
+      n_features, square
+    );
+  }
+
 }
 
 template void count_features_coo(
@@ -108,5 +144,7 @@ template void count_features_coo(
   // const int64_t*, // value_t
   // bool,
   int,
-  bool
+  int,
+  bool,
+  void*
 );

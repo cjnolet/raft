@@ -49,7 +49,7 @@ class MultinomialNB:
     def predict(self, X):
         X = CSRStore.from_sparse_array(X).to_type(self.feature_log_prob_.type)
         jll = add(X @ T(self.feature_log_prob_), self.class_log_prior_)
-        indices = argmax(jll, axis=1)
+        indices = argmax(jll, axis=1)  # Signal 11!!!
         return as_array(invert_labels(indices, self.classes_))
 
 
@@ -74,6 +74,9 @@ if __name__ == "__main__":
 
     estimator.fit(X, y)
     sk_estimator.fit(X, y)
+
+    print("feature count sum (sklearn)", sk_estimator.feature_count_.sum())
+    print("feature count sum (legate) ", as_array(estimator.feature_count_).sum())
 
     assert_allclose(as_array(estimator.feature_count_), sk_estimator.feature_count_)
     assert_allclose(as_array(estimator.class_count_), sk_estimator.class_count_)

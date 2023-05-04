@@ -60,6 +60,12 @@ class ConvertTask : public Task<ConvertTask, CONVERT> {
     switch (input.code()) {
         case legate::LegateTypeCode::INT64_LT:
             switch(output.code()) {
+                case legate::LegateTypeCode::INT32_LT:
+                    return legate::dim_dispatch(
+                        input.dim(),
+                        convert_fn<legate::LegateTypeCode::INT64_LT, legate::LegateTypeCode::INT32_LT>{},
+                        output, input
+                    );
                 case legate::LegateTypeCode::FLOAT_LT:
                     return legate::dim_dispatch(
                         input.dim(),
