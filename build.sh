@@ -39,7 +39,7 @@ fi
 mkdir -p cpp/$BUILD_DIR
 cd cpp/$BUILD_DIR
 
-cmake \
+cmake  \
  -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
  -DRAFT_NVTX=OFF \
  -DCMAKE_CUDA_ARCHITECTURES="NATIVE" \
@@ -48,7 +48,7 @@ cmake \
  ${EXTRA_CMAKE_ARGS} \
  ../../
 
-cmake --build . -j${PARALLEL_LEVEL}
+cmake --build . -v -j${PARALLEL_LEVEL}
 cmake --install . --prefix ${INSTALL_PREFIX}
 
 cd ../..

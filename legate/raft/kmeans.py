@@ -59,5 +59,5 @@ class KMeans:
         # kmeans_fit_task.add_alignment(X_store, labels_store)
         kmeans_fit_task.add_nccl_communicator()
         kmeans_fit_task.execute()
-        self.centroids_ = centroids_store
+        #self.centroids_ = centroids_store
         return self

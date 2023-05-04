@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "../legate_library.h"
+#include "../legate_raft.h"
 #include <raft/cluster/specializations.cuh>
 
 #include <raft/core/handle.hpp>
@@ -22,6 +24,9 @@
 #include <raft/comms/std_comms.hpp>
 
 #include <raft/cluster/kmeans_types.hpp>
+
+#include <legate/core/cuda/stream_pool.h>
+
 
 namespace kmeans {
 // ----------------------------- fit ---------------------------------//
@@ -38,6 +43,8 @@ namespace kmeans {
                  IdxT& n_iter)
         {
             raft::handle_t handle;
+
+	    printf("Device id: %d\n", handle.get_device());
             ncclComm_t nccl_comm = *(ncclComm_t *)comms;
             int n_ranks;
             ncclCommCount(nccl_comm, &n_ranks);
@@ -50,7 +57,10 @@ namespace kmeans {
 
             raft::comms::build_comms_nccl_only(&handle, nccl_comm, n_ranks, rank);
 
+	    handle.get_comms().barrier();
+
 	    printf("Comms built and injected on handle\n");
+	    handle.get_comms().barrier();
             impl::fit(handle, params, X, n_samples, n_features,
                       sample_weight, centroids, inertia, n_iter);
 

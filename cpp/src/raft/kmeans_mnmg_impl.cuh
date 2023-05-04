@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <csignal>
 #include <raft/core/logger.hpp>
 #include <raft/cluster/kmeans.cuh>
 #include <raft/cluster/kmeans_types.hpp>
@@ -135,6 +136,7 @@
                                         rmm::device_uvector<char>& workspace)
                 {
 
+
 			printf("Inside kmeans plus plus\n");
 
 			fflush(stdout);
@@ -190,9 +192,12 @@
 
 		    printf("rank %d About to call bcast\n", my_rank);
 
-		    comm.group_start();
+		    comm.sync_stream(handle.get_stream());
+
+
+
                     comm.bcast<DataT>(initialCentroid.data_handle(), initialCentroid.size(), rp, stream);
-		    comm.group_end();
+
 
 
 		    printf("rank %d after calling bcast\n", my_rank);
@@ -261,6 +266,11 @@
 
                     // compute total cluster cost by accumulating the partial cost from all the
                     // ranks
+
+		    printf("About to call callreduce\n");
+		    fflush(stdout);
+
+
                     comm.allreduce(
                             clusterCost.data_handle(), clusterCost.data_handle(), 1, raft::comms::op_t::SUM, stream);
 
@@ -308,6 +318,10 @@
                                 workspace,
                                 clusterCost.view(),
                                 [] __device__(const DataT& a, const DataT& b) { return a + b; });
+
+			printf("About to call allreduce again\n");
+			fflush(stdout);
+
                         comm.allreduce(
                                 clusterCost.data_handle(), clusterCost.data_handle(), 1, raft::comms::op_t::SUM, stream);
                         raft::copy(&psi, clusterCost.data_handle(), 1, stream);
