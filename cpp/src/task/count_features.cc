@@ -101,8 +101,6 @@ struct sparse_count_features_fn_gpu {
 
     void * nccl_comm = 0;
 
-    std::cerr << "offset: " << offset << "\n";
-
     if (comms.size() > 0) {
       nccl_comm = comms[0].get<void*>();
     }
@@ -147,8 +145,6 @@ class SparseCountFeaturesTask : public Task<SparseCountFeaturesTask, COUNT_FEATU
   static void cpu_variant(legate::TaskContext& context)
   {
 
-    std::cerr << "# communicators: " << context.communicators().size() << "\n";
-
     auto& X_data = context.inputs().at(0);
     auto& X_rows = context.inputs().at(1);
     auto& X_cols = context.inputs().at(2);
@@ -163,8 +159,6 @@ class SparseCountFeaturesTask : public Task<SparseCountFeaturesTask, COUNT_FEATU
 
   static void gpu_variant(legate::TaskContext& context)
   {
-    std::cerr << "# communicators: " << context.communicators().size() << "\n";
-
     auto& X_data = context.inputs().at(0);
     auto& X_rows = context.inputs().at(1);
     auto& X_cols = context.inputs().at(2);
@@ -175,8 +169,6 @@ class SparseCountFeaturesTask : public Task<SparseCountFeaturesTask, COUNT_FEATU
     auto n_cols = context.scalars().at(2).value<uint64_t>();
     auto n_features = context.scalars().at(3).value<uint64_t>();
     auto n_classes = context.scalars().at(4).value<uint64_t>();
-
-    std::cerr << "n_features:" << n_features << "\n";
 
     auto& result = context.reductions().at(0);
 
