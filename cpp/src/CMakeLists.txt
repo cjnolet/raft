@@ -18,7 +18,7 @@ add_library(
         task/add_constant.cc
         task/bincount.cc
         task/categorize.cc
-        task/convert.cc
+        task/convert.cu
         task/count_features.cc
         task/exp.cc
         task/fill.cc

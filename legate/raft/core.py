@@ -123,6 +123,10 @@ def convert(input: Store, dtype: DataType) -> Store:
     task.add_alignment(input, result)
     task.execute()
 
+    # TODO: This should not be necessary once we pro-actively sync the cuda
+    # stream.
+    context.issue_execution_fence()
+
     return result
 
 
