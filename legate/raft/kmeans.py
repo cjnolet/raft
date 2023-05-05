@@ -20,16 +20,22 @@ from .library import user_lib
 from .core import as_store, as_array
 import numpy as np
 
+import rmm
+pool = rmm.mr.PoolMemoryResource(rmm.mr.CudaAsyncMemoryResource(), initial_pool_size=2**30, maximum_pool_size=2**32)
+rmm.reinitialize(pool_allocator=True, initial_pool_size=2**31)
+
+
 
 class KMeans:
 
-    def __init__(self):
+    def __init__(self, n_gpus):
         self.centroids_ = None
+        self.n_gpus_ = n_gpus
 
     def fit(self, X: np.ndarray, k: int):
 
         # TODO: Need to figure out how to accept an existing store
-        X_row_part_size = 50
+        X_row_part_size =  int(X.shape[0] / self.n_gpus_)
         n_features = X.shape[1]
 
         # Setup X store

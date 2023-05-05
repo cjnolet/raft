@@ -349,6 +349,9 @@
                                                                 workspace);
                         /// <<<< End of Step-4 >>>>
 
+
+			printf("Allocating host pinned memory\n");
+
                         int* nPtsSampledByRank;
                         RAFT_CUDA_TRY(cudaMallocHost(&nPtsSampledByRank, n_rank * sizeof(int)));
 

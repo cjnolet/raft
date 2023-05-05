@@ -28,6 +28,13 @@
 #include <legate/core/cuda/stream_pool.h>
 
 
+#include <rmm/mr/device/pool_memory_resource.hpp>
+#include <rmm/mr/device/cuda_memory_resource.hpp>
+
+
+
+
+
 namespace kmeans {
 // ----------------------------- fit ---------------------------------//
 
@@ -42,7 +49,14 @@ namespace kmeans {
                  T& inertia,
                  IdxT& n_iter)
         {
-            raft::handle_t handle;
+
+	    rmm::mr::cuda_memory_resource cuda_mr;
+	    rmm::mr::pool_memory_resource<rmm::mr::cuda_memory_resource> pool_mr{&cuda_mr};
+	    rmm::mr::set_current_device_resource(&pool_mr);
+
+
+	    cudaStream_t stream = legate::cuda::StreamPool::get_stream_pool().get_stream();
+            raft::handle_t handle(stream);
 
 	    printf("Device id: %d\n", handle.get_device());
             ncclComm_t nccl_comm = *(ncclComm_t *)comms;
@@ -50,6 +64,8 @@ namespace kmeans {
             ncclCommCount(nccl_comm, &n_ranks);
             raft::cluster::KMeansParams params;
             params.n_clusters = k;
+
+	    handle.sync_stream();
 
             int rank;
             ncclCommUserRank(nccl_comm, &rank);
