@@ -105,16 +105,15 @@ struct sparse_count_features_fn_gpu {
       nccl_comm = comms[0].get<void*>();
     }
 
-
     count_features_coo(
-      result_acc.ptr(Legion::DomainPoint(0)),
-      rows_acc.ptr(Legion::DomainPoint(offset)),
-      cols_acc.ptr(Legion::DomainPoint(offset)),
-      data_acc.ptr(Legion::DomainPoint(offset)),
+      result_acc.ptr({0, 0}),
+      rows_acc.ptr(offset),
+      cols_acc.ptr(offset),
+      data_acc.ptr(offset),
       nnz_,
       n_rows,
       n_cols,
-      labels_acc.ptr(Legion::DomainPoint(0)),
+      labels_acc.ptr(0),
       // NULL,
       // false,
       n_features,
