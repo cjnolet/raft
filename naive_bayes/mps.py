@@ -49,7 +49,7 @@ class MultinomialNB:
     def predict(self, X):
         X = CSRStore.from_sparse_array(X).to_type(self.feature_log_prob_.type)
         jll = add(X @ T(self.feature_log_prob_), self.class_log_prior_)
-        indices = argmax(jll, axis=1)  # Signal 11!!!
+        indices = argmax(jll, axis=1)
         return as_array(invert_labels(indices, self.classes_))
 
 
