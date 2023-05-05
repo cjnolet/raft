@@ -151,7 +151,7 @@ class SparseCountFeaturesTask : public Task<SparseCountFeaturesTask, COUNT_FEATU
     auto& labels = context.inputs().at(3);
     auto n_classes = context.scalars().at(0).value<uint64_t>();
 
-    auto& result = context.outputs().at(0);
+    auto& result = context.reductions().at(0);
 
     legate::type_dispatch(X_data.code(), sparse_count_features_fn_cpu{}, X_data, X_rows, X_cols, labels, result, n_classes);
   }

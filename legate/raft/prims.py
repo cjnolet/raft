@@ -17,11 +17,10 @@ from legate.core import types as ty
 from .array_api import fill, unique
 from .cffi import OpCode
 from .core import Store, convert
+from .library import get_legate_runtime
 from .library import user_context as context
 from .multiarray import bincount
 from .sparse import SparseStore
-
-# from .library import get_legate_runtime
 
 
 def map_labels(labels: Store, classes: Store) -> Store:
@@ -126,10 +125,9 @@ def count_features(X: SparseStore, Y: Store, n_classes: int) -> Store:
     task.add_reduction(result, ty.ReductionOp.ADD)
     task.add_broadcast(result)
 
-    # runtime = get_legate_runtime()
-    # if runtime.num_gpus > 1:
-    #     task.add_nccl_communicator()
-    task.add_nccl_communicator()
+    runtime = get_legate_runtime()
+    if runtime.num_gpus > 1:
+        task.add_nccl_communicator()
     # task.add_cpu_communicator()
 
     task.execute()
