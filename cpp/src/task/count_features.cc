@@ -173,12 +173,6 @@ class SparseCountFeaturesTask : public Task<SparseCountFeaturesTask, COUNT_FEATU
 
     auto nnz = X_rows.shape<1>().hi[0];
 
-    // sparse_count_features_fn_gpu{}.operator()<FLOAT_LT>(
-    //   X_data, X_rows, X_cols, labels, result,
-    //   nnz, n_rows, n_cols, n_features,
-    //   context.communicators()
-    // );
-
     legate::type_dispatch(X_data.code(), sparse_count_features_fn_gpu{},
                           X_data, X_rows, X_cols, labels, result,
                           nnz, n_rows, n_cols, n_features, n_classes,
