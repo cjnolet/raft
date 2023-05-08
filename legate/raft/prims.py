@@ -17,7 +17,6 @@ from legate.core import types as ty
 from .array_api import fill, unique
 from .cffi import OpCode
 from .core import Store, convert
-from .library import get_legate_runtime
 from .library import user_context as context
 from .multiarray import bincount
 from .sparse import SparseStore
@@ -119,16 +118,10 @@ def count_features(X: SparseStore, Y: Store, n_classes: int) -> Store:
     task.add_scalar_arg(n_rows, ty.uint64)
     task.add_scalar_arg(n_cols, ty.uint64)
     task.add_scalar_arg(n_features, ty.uint64)
-    task.add_scalar_arg(n_classes, ty.uint64)
     # TODO: Replace with better constraints.
     task.add_broadcast(Y)
     task.add_reduction(result, ty.ReductionOp.ADD)
     task.add_broadcast(result)
-
-    runtime = get_legate_runtime()
-    if runtime.num_gpus > 1:
-        task.add_nccl_communicator()
-    # task.add_cpu_communicator()
 
     task.execute()
     return result

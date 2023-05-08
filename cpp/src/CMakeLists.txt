@@ -5,11 +5,8 @@ add_library(
 
         # RAFT API Wrappers
         raft/count_features_coo.cu
-        # raft/histogram.cu
-        # raft/distance.cu
-        raft/raft_kmeans.cu
-        # raft/raft_knn.cu
-        # raft/raft_knn_merge.cu
+        raft/distance.cu
+        raft/histogram.cu
 
         # Legate tasks
         task/add.cc
@@ -19,7 +16,7 @@ add_library(
         task/bincount.cc
         task/categorize.cc
         task/convert.cu
-        task/count_features.cc
+        task/count_features.cu
         task/exp.cc
         task/fill.cc
         task/find_max.cc

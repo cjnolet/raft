@@ -14,12 +14,15 @@
  *
  */
 
-//  #include <raft/core/device_resources.hpp>
+#include <iostream>  // TODO: remove after debugging
+#include <cstdint>
 
+#include "core/cuda/stream_pool.h"
+#include "core/utilities/dispatch.h"
+
+#include "legate_library.h"
 #include "../raft/raft_api.hpp"
 #include "../legate_raft.h"
-#include "legate_library.h"
-#include "core/utilities/dispatch.h"
 
 namespace legate_raft {
 
@@ -34,7 +37,7 @@ struct sparse_count_features_fn_cpu {
   template <legate::LegateTypeCode CODE, std::enable_if_t<is_supported<CODE>>* = nullptr>
   void operator()(
       legate::Store& data, legate::Store& rows, legate::Store& cols,
-      legate::Store& labels, legate::Store& result, uint64_t n_classes)
+      legate::Store& labels, legate::Store& result)
   {
     using VAL = legate::legate_type_of<CODE>;
 
@@ -61,12 +64,49 @@ struct sparse_count_features_fn_cpu {
   template <legate::LegateTypeCode CODE, std::enable_if_t<!is_supported<CODE>>* = nullptr>
   void operator()(
       legate::Store& data, legate::Store& rows, legate::Store& cols,
-      legate::Store& labels, legate::Store& result, uint64_t n_classes)
+      legate::Store& labels, legate::Store& result)
   {
     LEGATE_ABORT;
   }
 
 };
+
+
+template<typename value_t, typename index_t, typename label_t>
+__global__
+void count_features_coo_kernel(value_t* out,
+                              index_t* rows,
+                                index_t* cols,
+                                const value_t* vals,
+                                int nnz,
+                                int n_rows,
+                                int n_cols,
+                                const label_t* labels,
+                                // value_t *weights,
+                                // bool has_weights,
+                                int n_features,
+                                bool square)
+{
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (i >= nnz) return;
+
+  index_t row = rows[i];
+  index_t col = cols[i];
+  value_t val = vals[i];
+  label_t label = labels[row];
+
+  auto out_idx = (label * n_features) + col;
+
+  // if (has_weights) val *= weights[i];
+  if (square) val *= val;
+  atomicAdd(out + out_idx, val);
+}
+
+template __global__ void count_features_coo_kernel(
+  float*, const int32_t *, const int32_t *, const float *,
+  int, int, int, const int64_t *, int, bool
+);
 
 template <legate::LegateTypeCode CODE>
 constexpr bool is_supported_gpu = (CODE == FLOAT_LT);
@@ -77,60 +117,50 @@ struct sparse_count_features_fn_gpu {
   void operator()(
       legate::Store& data, legate::Store& rows, legate::Store& cols,
       legate::Store& labels, legate::Store& result,
-      int nnz, uint64_t n_rows, uint64_t n_cols,
-      uint64_t n_features, uint64_t n_classes,
-      std::vector<legate::comm::Communicator>& comms)
+      uint64_t n_rows, uint64_t n_cols,
+      uint64_t n_features)
   {
-    // raft::device_resources handle;
-
-    using VAL = legate::legate_type_of<CODE>;
+    using value_t = legate::legate_type_of<CODE>;
+    using index_t = int32_t;
 
     auto shape = data.shape<1>();
 
-    auto data_acc = data.read_accessor<VAL, 1>();
+    auto data_acc = data.read_accessor<value_t, 1>();
     auto rows_acc = rows.read_accessor<int32_t, 1>();
     auto cols_acc = cols.read_accessor<int32_t, 1>();
-
     auto labels_acc = labels.read_accessor<int64_t, 1>();
-    auto result_acc = result.reduce_accessor<legate::SumReduction<VAL>, true, 2>();
+    auto result_acc = result.reduce_accessor<legate::SumReduction<value_t>, true, 2>();
 
     auto data_shape = data.shape<1>();
     auto offset = data_shape.lo[0];
-    // auto result_offset = result.shape<2>().lo[0];
-    auto nnz_ = data_shape.hi[0] + 1 - offset;
+    auto nnz = data_shape.hi[0] + 1 - offset;
 
-    void * nccl_comm = 0;
+    int block_size = 256;  // TODO: tune
+    int num_blocks = (nnz + block_size - 1) / block_size;
 
-    if (comms.size() > 0) {
-      nccl_comm = comms[0].get<void*>();
-    }
+    auto stream = legate::cuda::StreamPool::get_stream_pool().get_stream();
 
-    count_features_coo(
+    count_features_coo_kernel<<<num_blocks, block_size, 0, stream>>>(
       result_acc.ptr({0, 0}),
       rows_acc.ptr(offset),
       cols_acc.ptr(offset),
       data_acc.ptr(offset),
-      nnz_,
+      nnz,
       n_rows,
       n_cols,
       labels_acc.ptr(0),
-      // NULL,
-      // false,
+      // weights, has_weights,
       n_features,
-      n_classes,
-      false,
-      nccl_comm
+      false
     );
-
   }
 
   template <legate::LegateTypeCode CODE, std::enable_if_t<!is_supported_gpu<CODE>>* = nullptr>
   void operator()(
       legate::Store& data, legate::Store& rows, legate::Store& cols,
       legate::Store& labels, legate::Store& result,
-      int nnz, uint64_t n_rows, uint64_t n_cols,
-      uint64_t n_features, uint64_t n_classes,
-      std::vector<legate::comm::Communicator>& comms)
+      uint64_t n_rows, uint64_t n_cols,
+      uint64_t n_features)
   {
     LEGATE_ABORT;
   }
@@ -149,11 +179,10 @@ class SparseCountFeaturesTask : public Task<SparseCountFeaturesTask, COUNT_FEATU
     auto& X_cols = context.inputs().at(2);
 
     auto& labels = context.inputs().at(3);
-    auto n_classes = context.scalars().at(0).value<uint64_t>();
-
     auto& result = context.reductions().at(0);
 
-    legate::type_dispatch(X_data.code(), sparse_count_features_fn_cpu{}, X_data, X_rows, X_cols, labels, result, n_classes);
+    legate::type_dispatch(X_data.code(), sparse_count_features_fn_cpu{},
+                          X_data, X_rows, X_cols, labels, result);
   }
 
   static void gpu_variant(legate::TaskContext& context)
@@ -167,16 +196,12 @@ class SparseCountFeaturesTask : public Task<SparseCountFeaturesTask, COUNT_FEATU
     auto n_rows = context.scalars().at(1).value<uint64_t>();
     auto n_cols = context.scalars().at(2).value<uint64_t>();
     auto n_features = context.scalars().at(3).value<uint64_t>();
-    auto n_classes = context.scalars().at(4).value<uint64_t>();
 
     auto& result = context.reductions().at(0);
 
-    auto nnz = X_rows.shape<1>().hi[0];
-
     legate::type_dispatch(X_data.code(), sparse_count_features_fn_gpu{},
                           X_data, X_rows, X_cols, labels, result,
-                          nnz, n_rows, n_cols, n_features, n_classes,
-                          context.communicators());
+                          n_rows, n_cols, n_features);
   }
 
 };
