@@ -31,8 +31,8 @@ add_library(
         task/mul.cc
         task/range.cc
         task/sparse_matmul.cc
-        task/sum_over_axis.cc
-        # task/unique.cc
+        task/sum_over_axis.cu
+        task/unique.cc
 
         # Library templates
         ${TEMPLATE_SOURCES}

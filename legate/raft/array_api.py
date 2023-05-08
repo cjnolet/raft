@@ -121,6 +121,7 @@ def sum_over_axis(input: Store, axis: int) -> Store:
     task.add_alignment(input, promoted)
 
     task.execute()
+    context.issue_execution_fence()
 
     return result
 
