@@ -15,7 +15,7 @@ add_library(
         task/add.cc
         task/argmax.cc
         # task/compute_1nn.cc
-        task/add_constant.cc
+        task/add_constant.cu
         task/bincount.cc
         task/categorize.cc
         task/convert.cu
