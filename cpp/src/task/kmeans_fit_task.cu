@@ -5,6 +5,8 @@
 #include "../legate_raft.h"
 #include "../legate_library.h"
 
+#include <nccl.h>
+
 namespace legate_raft {
 
 class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> {
@@ -20,11 +22,13 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
 //            auto& labels = context.outputs()[1];
 
             printf("Got X\n");
-            auto& centroids = context.outputs()[0];  // centroids should be allocated locally.
 
             printf("Got centroids!\n");
 
             void* nccl_com = context.communicators()[0].get<void*>();
+
+            int rank;
+            ncclCommUserRank((ncclComm_t)nccl_com, &rank);
 
             printf("Got NCCL comms!\n");
 
@@ -36,14 +40,13 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
             // The offset of the current partition from the start of the store
             // is used to obtain the pointer to the start of the partition.
             uint64_t X_offset = X.shape<2>().lo[0];
-            uint64_t centroids_offset = centroids.shape<2>().lo[0];
-
             const float* X_read = X.read_accessor<float, 2>().ptr(Legion::DomainPoint(X_offset));
 
-            printf("Got X_read!\n");
-            float* centroids_write = centroids.write_accessor<float, 2>().ptr(Legion::DomainPoint(centroids_offset));
+            Legion::Point<2> buffer_alloc_size{k, n_features};
+            auto& centroids = context.outputs()[0];
+            auto centroids_buffer = centroids.create_output_buffer<float, 2>(buffer_alloc_size, rank == 0);
 
-            printf("Got centroids_write!\n");
+            printf("Got centroids_buffer!\n");
 //            int* labels_write = labels.write_accessor<int, 2>().ptr(Legion::DomainPoint(offset));
 
             float inertia = 0;
@@ -52,12 +55,19 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
             const float* weights = nullptr;
 
             printf("Invoking kmeans\n");
-            kmeans::fit<float, int>(nccl_com, k, X_read,
-                     n_samples, n_features, weights,
-                    centroids_write, inertia, n_iter);
+            kmeans::fit<float, int>(nccl_com,
+                                    k,
+                                    X_read,
+                                    n_samples,
+                                    n_features,
+                                    weights,
+                                    centroids_buffer.ptr(buffer_alloc_size),
+                                    inertia,
+                                    n_iter);
 
             printf("Done kmeans task\n");
 
+            printf("Returned centroids_buffer\n");
         }
     };
 
