@@ -96,7 +96,8 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
             printf("Returned centroids_buffer\n");
 
 
-	        centroids.return_data(centroids_buffer, buffer_alloc_size);
+	    if(rank == 0)
+	        centroids.bind_data(centroids_buffer, buffer_alloc_size);
         }
     };
 
