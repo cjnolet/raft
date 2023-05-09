@@ -20,12 +20,6 @@ from .library import user_lib
 from .core import as_store, as_array
 import numpy as np
 
-import rmm
-pool = rmm.mr.PoolMemoryResource(rmm.mr.CudaAsyncMemoryResource(), initial_pool_size=2**30, maximum_pool_size=2**32)
-rmm.reinitialize(pool_allocator=True, initial_pool_size=2**31)
-
-
-
 class KMeans:
 
     def __init__(self, n_gpus):
@@ -33,6 +27,8 @@ class KMeans:
         self.n_gpus_ = n_gpus
 
     def fit(self, X: np.ndarray, k: int):
+
+        print("Inside fit!!!", flush=True)
 
         # TODO: Need to figure out how to accept an existing store
         X_row_part_size =  int(X.shape[0] / self.n_gpus_)
@@ -48,9 +44,7 @@ class KMeans:
         centroids_buf = np.zeros((k, n_features), dtype=np.float32)
         # labels_buf = np.zeros((X_row_part_size*n_parts, 1), dtype=np.int32)
 
-        # TODO: Each task is going to end up computing this same thing individually. Need
-        # to figure out how to grab it only from a single task.
-        centroids_store = context.create_store(np.float32, ndim=2)
+        centroids_store = context.create_store(types.float32, ndim=2)
         # labels_store = as_store(labels_buf).partition_by_tiling((X_row_part_size, 1))
 
         # Run KMeans Fit task
@@ -65,5 +59,5 @@ class KMeans:
         # kmeans_fit_task.add_alignment(X_store, labels_store)
         kmeans_fit_task.add_nccl_communicator()
         kmeans_fit_task.execute()
-        self.centroids_ = as_array(centroids_store.store)
+        self.centroids_ = centroids_store
         return self

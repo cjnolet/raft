@@ -50,6 +50,15 @@ namespace kmeans {
                  IdxT& n_iter)
         {
 
+	    /**
+                    TODO: Setting a pool_memory_resource for now to unblock hangs 
+                    (ref: https://nvbugswb.nvidia.com/NvBugs5/SWBug.aspx?bugid=3660467&cmtNo=) 
+                    but we should really think about a more sustainable method for doing this, 
+		    which wouldn't require the pool memory resource. Legate devs suggest writing
+		    an RMM adaptor for legate.core's DeferredBuffer (https://github.com/nv-legate/legate.core/blob/branch-23.05/src/core/data/buffer.h)
+		    as has been done in legate.pandas (https://github.com/nv-legate/legate.pandas/blob/branch-22.01/src/cudf_util/allocators.h#L76)
+	      **/
+
 	    rmm::mr::cuda_memory_resource cuda_mr;
 	    rmm::mr::pool_memory_resource<rmm::mr::cuda_memory_resource> pool_mr{&cuda_mr};
 	    rmm::mr::set_current_device_resource(&pool_mr);
@@ -72,8 +81,6 @@ namespace kmeans {
             printf("NCCL Rank: %d, n_ranks=%d\n", rank, n_ranks);
 
             raft::comms::build_comms_nccl_only(&handle, nccl_comm, n_ranks, rank);
-
-	    handle.get_comms().barrier();
 
 	    printf("Comms built and injected on handle\n");
 	    handle.get_comms().barrier();

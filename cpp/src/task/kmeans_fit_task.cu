@@ -1,9 +1,15 @@
 #include <stdexcept>
 
-#include "../raft/raft_kmeans_api.hpp"
-
 #include "../legate_raft.h"
 #include "../legate_library.h"
+
+
+#include "../raft/raft_kmeans_api.hpp"
+#include <rmm/device_uvector.hpp>
+#include <raft/core/handle.hpp>
+#include <legate/core/cuda/stream_pool.h>
+
+#include <cuda_runtime.h>
 
 #include <nccl.h>
 
@@ -43,8 +49,28 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
             const float* X_read = X.read_accessor<float, 2>().ptr(Legion::DomainPoint(X_offset));
 
             Legion::Point<2> buffer_alloc_size{k, n_features};
-            auto& centroids = context.outputs()[0];
-            auto centroids_buffer = centroids.create_output_buffer<float, 2>(buffer_alloc_size, rank == 0);
+	    if(rank != 0) {
+              buffer_alloc_size[0] = 0;
+	      buffer_alloc_size[0] = 0;
+	    }
+
+	    auto& centroids = context.outputs()[0];
+            auto centroids_buffer = centroids.create_output_buffer<float, 2>(buffer_alloc_size);
+
+	    float *centroids_ptr = nullptr;
+
+            cudaStream_t stream = legate::cuda::StreamPool::get_stream_pool().get_stream();
+            raft::handle_t handle(stream);
+
+
+	    rmm::device_uvector<float> centroids_uvec(0, handle.get_stream());
+            if(rank == 0) {
+		Legion::Point<2> offset{0, 0};
+		centroids_ptr = centroids_buffer.ptr(offset);
+	    } else {
+                centroids_uvec.resize(k * n_features, handle.get_stream());
+		centroids_ptr = centroids_uvec.data();
+	    }
 
             printf("Got centroids_buffer!\n");
 //            int* labels_write = labels.write_accessor<int, 2>().ptr(Legion::DomainPoint(offset));
@@ -61,13 +87,16 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
                                     n_samples,
                                     n_features,
                                     weights,
-                                    centroids_buffer.ptr(buffer_alloc_size),
+                                    centroids_ptr,
                                     inertia,
                                     n_iter);
 
             printf("Done kmeans task\n");
 
             printf("Returned centroids_buffer\n");
+
+
+	        centroids.return_data(centroids_buffer, buffer_alloc_size);
         }
     };
 
