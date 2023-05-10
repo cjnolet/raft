@@ -74,8 +74,6 @@ namespace kmeans {
             raft::cluster::KMeansParams params;
             params.n_clusters = k;
 
-	    handle.sync_stream();
-
             int rank;
             ncclCommUserRank(nccl_comm, &rank);
             printf("NCCL Rank: %d, n_ranks=%d\n", rank, n_ranks);
