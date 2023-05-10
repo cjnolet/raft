@@ -53,4 +53,4 @@ install(TARGETS legate_raft
 )
 
 include("${CMAKE_SOURCE_DIR}/helper_functions.cmake")
-legate_add_cffi(legate_raft_cffi.h TARGET legate_raft PY_PATH legate/raft)
+legate_add_cffi(legate_raft_cffi.h TARGET legate_raft PY_PATH ../../legate/raft)
