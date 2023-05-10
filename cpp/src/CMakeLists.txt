@@ -9,7 +9,7 @@ add_library(
         raft/histogram.cu
 
         # Legate tasks
-        task/add.cc
+        task/add.cu
         task/argmax.cc
         # task/compute_1nn.cc
         task/add_constant.cu
