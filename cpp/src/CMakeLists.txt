@@ -13,7 +13,7 @@ add_library(
         task/argmax.cc
         # task/compute_1nn.cc
         task/add_constant.cu
-        task/bincount.cc
+        task/bincount.cu
         task/categorize.cc
         task/convert.cu
         task/count_features.cu
