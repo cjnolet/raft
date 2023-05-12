@@ -10,6 +10,7 @@ from legate.raft.core import as_store
 from .array_api import fill
 from .cffi import OpCode
 from .core import as_array, convert
+from .library import get_legate_runtime
 from .library import user_context as context
 
 SparseArray: TypeAlias = csr_array | csr_matrix | coo_array | coo_matrix
@@ -22,6 +23,7 @@ class CSRStore:
     indptr: Store
 
     shape: tuple[int]
+    nnz: int
 
     @classmethod
     def from_array(cls, array) -> "CSRStore":
@@ -36,6 +38,7 @@ class CSRStore:
             indices=as_store(csr.indices),
             indptr=as_store(csr.indptr),
             shape=csr.shape,
+            nnz=csr.nnz,
         )
 
     @property
@@ -52,6 +55,7 @@ class CSRStore:
             indices=self.indices,
             indptr=self.indptr,
             shape=self.shape,
+            nnz=self.nnz,
         )
 
     def to_sparse_array(self) -> csr_array:
@@ -114,10 +118,10 @@ def as_sparse_store(array: SparseArray) -> SparseStore:
 def _csr_mm(A: CSRStore, B: Store) -> Store:
     assert A.type == B.type
 
-    m, n = A.shape
-    n_, p = B.shape
-    assert n == n_
-    result_shape = (m, p)
+    m, k = A.shape
+    k_, n = B.shape
+    assert k == k_
+    result_shape = (m, n)
 
     C = fill(result_shape, 0, A.type)
 
@@ -131,11 +135,22 @@ def _csr_mm(A: CSRStore, B: Store) -> Store:
     # TODO: replace broadcasts with constraints once that's possible
     task.add_alignment(A.indices, A.data)
     task.add_broadcast(A.indices)
+    task.add_broadcast(A.data)
 
     task.add_input(B)
     task.add_broadcast(B)
 
-    task.add_reduction(C, ty.ReductionOp.ADD)
+    runtime = get_legate_runtime()
+    if runtime.num_gpus > 0:
+        task.add_output(C)
+        # task.add_broadcast(C)
+    else:
+        task.add_reduction(C, ty.ReductionOp.ADD)
+
+    task.add_scalar_arg(m, ty.int32)
+    task.add_scalar_arg(k, ty.int32)
+    task.add_scalar_arg(n, ty.int32)
+    task.add_scalar_arg(A.nnz, ty.uint64)
 
     task.execute()
 

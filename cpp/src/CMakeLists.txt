@@ -30,7 +30,7 @@ add_library(
         task/matmul.cc
         task/mul.cc
         task/range.cc
-        task/sparse_matmul.cc
+        task/sparse_matmul.cu
         task/sum_over_axis.cu
         task/unique.cc
 
@@ -45,7 +45,8 @@ target_include_directories(legate_raft
         $<INSTALL_INTERFACE:include>
         )
 
-target_link_libraries(legate_raft PRIVATE legate::core raft::raft raft::compiled raft::distributed)
+# target_link_libraries(legate_raft PRIVATE legate::core raft::raft raft::compiled raft::distributed)
+target_link_libraries(legate_raft PRIVATE legate::core raft::raft raft::compiled)
 
 
 install(TARGETS legate_raft
