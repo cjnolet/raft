@@ -4,8 +4,11 @@ add_library(
         legate_raft
 
         # RAFT API Wrappers
-        raft/distance.cu
-        raft/histogram.cu
+        # raft/histogram.cu
+        # raft/distance.cu
+        raft/raft_kmeans.cu
+        # raft/raft_knn.cu
+        # raft/raft_knn_merge.cu
 
         # Legate tasks
         task/add.cu
