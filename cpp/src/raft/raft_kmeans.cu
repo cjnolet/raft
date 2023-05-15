@@ -21,25 +21,19 @@
 #include <raft/core/handle.hpp>
 #include "raft_kmeans_api.hpp"
 #include "kmeans_mnmg_impl.cuh"
-#include <raft/comms/std_comms.hpp>
+
 
 #include <raft/cluster/kmeans_types.hpp>
 
 #include <legate/core/cuda/stream_pool.h>
 
-
-#include <rmm/mr/device/pool_memory_resource.hpp>
-#include <rmm/mr/device/cuda_memory_resource.hpp>
-
-
-
-
+#include <nccl.h>
 
 namespace kmeans {
 // ----------------------------- fit ---------------------------------//
 
         template<typename T, typename IdxT>
-        void fit(void* comms,
+        void fit(raft::handle_t const &handle,
                  int k,
                  const T* X,
                  IdxT n_samples,
@@ -59,26 +53,22 @@ namespace kmeans {
 		    as has been done in legate.pandas (https://github.com/nv-legate/legate.pandas/blob/branch-22.01/src/cudf_util/allocators.h#L76)
 	      **/
 
-	    rmm::mr::cuda_memory_resource cuda_mr;
-	    rmm::mr::pool_memory_resource<rmm::mr::cuda_memory_resource> pool_mr{&cuda_mr};
-	    rmm::mr::set_current_device_resource(&pool_mr);
-
-
-	    cudaStream_t stream = legate::cuda::StreamPool::get_stream_pool().get_stream();
-            raft::handle_t handle(stream);
-
 	    printf("Device id: %d\n", handle.get_device());
-            ncclComm_t nccl_comm = *(ncclComm_t *)comms;
-            int n_ranks;
-            ncclCommCount(nccl_comm, &n_ranks);
+
             raft::cluster::KMeansParams params;
             params.n_clusters = k;
 
-            int rank;
-            ncclCommUserRank(nccl_comm, &rank);
-            printf("NCCL Rank: %d, n_ranks=%d\n", rank, n_ranks);
 
-            raft::comms::build_comms_nccl_only(&handle, nccl_comm, n_ranks, rank);
+
+//            ncclComm_t nccl_comm = *(ncclComm_t *)comms;
+//            int n_ranks;
+//            ncclCommCount(nccl_comm, &n_ranks);
+//
+//            int rank;
+//            ncclCommUserRank(nccl_comm, &rank);
+//            printf("NCCL Rank: %d, n_ranks=%d\n", rank, n_ranks);
+//
+//            raft::comms::build_comms_nccl_only(&handle, nccl_comm, n_ranks, rank);
 
 	    printf("Comms built and injected on handle\n");
 	    handle.get_comms().barrier();
@@ -90,7 +80,7 @@ namespace kmeans {
 	    handle.sync_stream();
         }
 
-    template void fit(void*,
+    template void fit(raft::handle_t const &,
              int,
              const float* ,
              int,
@@ -100,7 +90,7 @@ namespace kmeans {
              float&,
              int&);
 
-    template void fit(void*,
+    template void fit(raft::handle_t const &,
              int,
              const double*,
              int,

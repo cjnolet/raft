@@ -3,14 +3,13 @@
 #include "../legate_raft.h"
 #include "../legate_library.h"
 
+#include <common/gpu_task_context.hpp>
 
 #include "../raft/raft_kmeans_api.hpp"
 #include <rmm/device_uvector.hpp>
 #include <raft/core/handle.hpp>
-#include <legate/core/cuda/stream_pool.h>
 
 #include <cuda_runtime.h>
-
 #include <nccl.h>
 
 namespace legate_raft {
@@ -19,6 +18,9 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
     public:
         static void gpu_variant(legate::TaskContext& context)
         {
+            GPUTaskContext task_context{};
+            auto handle = task_context.handle();
+
             printf("Starting kmeans task\n");
             int k = context.scalars()[0].value<int>();
 
@@ -28,16 +30,12 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
 //            auto& labels = context.outputs()[1];
 
             printf("Got X\n");
-
             printf("Got centroids!\n");
 
-            void* nccl_com = context.communicators()[0].get<void*>();
+            auto nccl_com = context.communicators()[0].get<ncclComm_t>();
+            task_context.inject_nccl_comm(nccl_com);
 
-	    ncclComm_t* nccl_comm = (ncclComm_t*)nccl_com;
-
-            int rank;
-            ncclCommUserRank(*nccl_comm, &rank);
-
+            int rank = handle.get_comms().get_rank();
             printf("Got NCCL comms!\n");
 
             int n_samples = (X.shape<2>().hi[0] + 1) - X.shape<2>().lo[0];
@@ -61,9 +59,6 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
 
 	    float *centroids_ptr = nullptr;
 
-            cudaStream_t stream = legate::cuda::StreamPool::get_stream_pool().get_stream();
-            raft::handle_t handle(stream);
-
 
 	    rmm::device_uvector<float> centroids_uvec(0, handle.get_stream());
             if(rank == 0) {
@@ -83,7 +78,7 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
             const float* weights = nullptr;
 
             printf("Invoking kmeans\n");
-            kmeans::fit<float, int>(nccl_com,
+            kmeans::fit<float, int>(handle,
                                     k,
                                     X_read,
                                     n_samples,

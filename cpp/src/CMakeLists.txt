@@ -23,7 +23,7 @@ add_library(
 	task/fill.cc
 	task/find_max.cc
 	task/histogram.cc
-        task/kmeans_fit_task.cu
+		task/kmeans_fit.cu
 	task/invert_labels.cc
         # task/knn_merge_task.cc
         # task/knn_task.cc

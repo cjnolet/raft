@@ -16,19 +16,20 @@
 
 #pragma once
 
+#include <nccl.h>
+
 namespace kmeans {
 // ----------------------------- fit ---------------------------------//
 
-    template<typename T, typename IdxT>
-    void fit(void* comms,
-             int k,
-             const T* X,
-             IdxT n_samples,
-             IdxT n_features,
-             const T* sample_weight,
-             T* centroids,
-             T& inertia,
-             IdxT& n_iter);
-
+template<typename T, typename IdxT>
+void fit(raft::handle_t const &handle,
+         int k,
+         const T* X,
+         IdxT n_samples,
+         IdxT n_features,
+         const T* sample_weight,
+         T* centroids,
+         T& inertia,
+         IdxT& n_iter);
 
 };  // end namespace kmeans
