@@ -1,4 +1,5 @@
 .eggs/
+.hypothesis/
 .idea
 __pycache__/
 _skbuild/
