@@ -25,7 +25,7 @@ namespace legate_raft {
 namespace {
 
 struct add_constant_fn_cpu {
-  template <legate::LegateTypeCode CODE, int32_t DIM>
+  template <legate::Type::Code CODE, int32_t DIM>
   void operator()(legate::Store& output, legate::Store& input, legate::Scalar& value)
   {
     using VAL = legate::legate_type_of<CODE>;
@@ -44,8 +44,8 @@ struct add_constant_fn_cpu {
   }
 };
 
-template <legate::LegateTypeCode CODE>
-constexpr bool is_supported_gpu = (CODE == FLOAT_LT || CODE == DOUBLE_LT);
+template <legate::Type::Code CODE>
+constexpr bool is_supported_gpu = (CODE == legate::Type::Code::FLOAT32 || CODE == legate::Type::Code::FLOAT64);
 
 
 template<typename value_t>
@@ -62,7 +62,7 @@ template __global__ void add_constant_kernel(double*, const double*, double);
 
 struct add_constant_fn_gpu {
 
-  template <legate::LegateTypeCode CODE, int32_t DIM, std::enable_if_t<is_supported_gpu<CODE>>* = nullptr>
+  template <legate::Type::Code CODE, int32_t DIM, std::enable_if_t<is_supported_gpu<CODE>>* = nullptr>
   void operator()(legate::Store& output, legate::Store& input, legate::Scalar& value)
   {
     using VAL = legate::legate_type_of<CODE>;
@@ -87,7 +87,7 @@ struct add_constant_fn_gpu {
     );
   }
 
-  template <legate::LegateTypeCode CODE, int32_t DIM, std::enable_if_t<!is_supported_gpu<CODE>>* = nullptr>
+  template <legate::Type::Code CODE, int32_t DIM, std::enable_if_t<!is_supported_gpu<CODE>>* = nullptr>
   void operator()(legate::Store& output, legate::Store& input, legate::Scalar& value)
   {
     LEGATE_ABORT;

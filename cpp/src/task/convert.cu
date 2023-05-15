@@ -28,7 +28,7 @@ namespace legate_raft {
 namespace {
 
 
-template <legate::LegateTypeCode SRC_TYPE, legate::LegateTypeCode DST_TYPE>
+template <legate::Type::Code SRC_TYPE, legate::Type::Code DST_TYPE>
 struct convert_fn_cpu {
   template <int32_t DIM>
   void operator()(legate::Store& output, legate::Store& input)
@@ -61,7 +61,7 @@ void convert_kernel(const value_in_t* in, value_out_t* out)
 
 template __global__ void convert_kernel(const int64_t*, float*);
 
-template <legate::LegateTypeCode SRC_TYPE, legate::LegateTypeCode DST_TYPE>
+template <legate::Type::Code SRC_TYPE, legate::Type::Code DST_TYPE>
 struct convert_fn_gpu {
   template <int32_t DIM>
   void operator()(legate::Store& output, legate::Store& input)
@@ -101,24 +101,24 @@ class ConvertTask : public Task<ConvertTask, CONVERT> {
     auto& output = context.outputs()[0];
 
     switch (input.code()) {
-        case legate::LegateTypeCode::INT64_LT:
+        case legate::Type::Code::INT64:
             switch(output.code()) {
-                case legate::LegateTypeCode::INT32_LT:
+                case legate::Type::Code::INT32:
                     return legate::dim_dispatch(
                         input.dim(),
-                        convert_fn_cpu<legate::LegateTypeCode::INT64_LT, legate::LegateTypeCode::INT32_LT>{},
+                        convert_fn_cpu<legate::Type::Code::INT64, legate::Type::Code::INT32>{},
                         output, input
                     );
-                case legate::LegateTypeCode::FLOAT_LT:
+                case legate::Type::Code::FLOAT32:
                     return legate::dim_dispatch(
                         input.dim(),
-                        convert_fn_cpu<legate::LegateTypeCode::INT64_LT, legate::LegateTypeCode::FLOAT_LT>{},
+                        convert_fn_cpu<legate::Type::Code::INT64, legate::Type::Code::FLOAT32>{},
                         output, input
                     );
-                case legate::LegateTypeCode::DOUBLE_LT:
+                case legate::Type::Code::FLOAT64:
                     return legate::dim_dispatch(
                         input.dim(),
-                        convert_fn_cpu<legate::LegateTypeCode::INT64_LT, legate::LegateTypeCode::DOUBLE_LT>{},
+                        convert_fn_cpu<legate::Type::Code::INT64, legate::Type::Code::FLOAT64>{},
                         output, input
                     );
                 default:
@@ -135,24 +135,24 @@ class ConvertTask : public Task<ConvertTask, CONVERT> {
     auto& output = context.outputs()[0];
 
     switch (input.code()) {
-        case legate::LegateTypeCode::INT64_LT:
+        case legate::Type::Code::INT64:
             switch(output.code()) {
-                case legate::LegateTypeCode::INT32_LT:
+                case legate::Type::Code::INT32:
                     return legate::dim_dispatch(
                         input.dim(),
-                        convert_fn_gpu<legate::LegateTypeCode::INT64_LT, legate::LegateTypeCode::INT32_LT>{},
+                        convert_fn_gpu<legate::Type::Code::INT64, legate::Type::Code::INT32>{},
                         output, input
                     );
-                case legate::LegateTypeCode::FLOAT_LT:
+                case legate::Type::Code::FLOAT32:
                     return legate::dim_dispatch(
                         input.dim(),
-                        convert_fn_gpu<legate::LegateTypeCode::INT64_LT, legate::LegateTypeCode::FLOAT_LT>{},
+                        convert_fn_gpu<legate::Type::Code::INT64, legate::Type::Code::FLOAT32>{},
                         output, input
                     );
-                case legate::LegateTypeCode::DOUBLE_LT:
+                case legate::Type::Code::FLOAT64:
                     return legate::dim_dispatch(
                         input.dim(),
-                        convert_fn_gpu<legate::LegateTypeCode::INT64_LT, legate::LegateTypeCode::DOUBLE_LT>{},
+                        convert_fn_gpu<legate::Type::Code::INT64, legate::Type::Code::FLOAT64>{},
                         output, input
                     );
                 default:

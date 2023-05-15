@@ -50,11 +50,11 @@ void copy_to_output(legate::Store& output, const SET<VAL>& values)
   for (const auto& value : values) out_buf[idx++] = value;
 }
 
-template <legate::LegateTypeCode CODE>
+template <legate::Type::Code CODE>
 constexpr bool is_supported =
-  !(legate::is_floating_point<CODE>::value || legate::is_complex<CODE>::value || CODE == HALF_LT);
+  !(legate::is_floating_point<CODE>::value || legate::is_complex<CODE>::value || CODE == legate::Type::Code::FLOAT16);
 struct unique_fn {
-  template <legate::LegateTypeCode CODE, std::enable_if_t<is_supported<CODE>>* = nullptr>
+  template <legate::Type::Code CODE, std::enable_if_t<is_supported<CODE>>* = nullptr>
   void operator()(legate::Store& output, std::vector<legate::Store>& inputs)
   {
     using VAL = legate::legate_type_of<CODE>;
@@ -66,7 +66,7 @@ struct unique_fn {
     copy_to_output(output, unique_values);
   }
 
-  template <legate::LegateTypeCode CODE, std::enable_if_t<!is_supported<CODE>>* = nullptr>
+  template <legate::Type::Code CODE, std::enable_if_t<!is_supported<CODE>>* = nullptr>
   void operator()(legate::Store& output, std::vector<legate::Store>& inputs)
   {
     LEGATE_ABORT;

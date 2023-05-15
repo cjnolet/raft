@@ -26,7 +26,7 @@ namespace legate_raft {
 namespace {
 
 struct exp_fn {
-  template <legate::LegateTypeCode CODE, int32_t DIM>
+  template <legate::Type::Code CODE, int32_t DIM>
   void operator()(legate::Store& output, legate::Store& input)
   {
     using VAL = legate::legate_type_of<CODE>;

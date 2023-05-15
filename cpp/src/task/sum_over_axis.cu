@@ -29,7 +29,7 @@ namespace legate_raft {
 namespace {
 
 struct reduction_fn {
-  template <legate::LegateTypeCode CODE, int32_t DIM>
+  template <legate::Type::Code CODE, int32_t DIM>
   void operator()(legate::Store& output, legate::Store& input)
   {
     using VAL = legate::legate_type_of<CODE>;
@@ -71,12 +71,12 @@ void sum_over_axis_kernel(rd_t out, ro_t in, shape_t shape, pitches_t pitches)
 }
 
 
-template <legate::LegateTypeCode CODE>
-constexpr bool is_supported = (CODE == FLOAT_LT);
+template <legate::Type::Code CODE>
+constexpr bool is_supported = (CODE == legate::Type::Code::FLOAT32);
 
 struct reduction_fn_gpu {
 
-  template <legate::LegateTypeCode CODE, int32_t DIM, std::enable_if_t<is_supported<CODE>>* = nullptr>
+  template <legate::Type::Code CODE, int32_t DIM, std::enable_if_t<is_supported<CODE>>* = nullptr>
   void operator()(legate::Store& output, legate::Store& input)
   {
 
@@ -103,7 +103,7 @@ struct reduction_fn_gpu {
     handle.sync_stream();
   }
 
-  template <legate::LegateTypeCode CODE, int32_t DIM, std::enable_if_t<!is_supported<CODE>>* = nullptr>
+  template <legate::Type::Code CODE, int32_t DIM, std::enable_if_t<!is_supported<CODE>>* = nullptr>
   void operator()(legate::Store& output, legate::Store& input)
   {
     LEGATE_ABORT;

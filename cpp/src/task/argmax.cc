@@ -26,7 +26,7 @@ namespace {
 
     struct argmax_reduction_fn {
 
-        template <legate::LegateTypeCode CODE>
+        template <legate::Type::Code CODE>
         void operator()(legate::Store& input, legate::Store& output) {
 
             using VAL = legate::legate_type_of<CODE>;

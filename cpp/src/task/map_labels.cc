@@ -23,11 +23,11 @@ namespace legate_raft {
 
 namespace {
 
-template <legate::LegateTypeCode CODE>
-constexpr bool is_supported = (legate::is_integral<CODE>::value && CODE != BOOL_LT);
+template <legate::Type::Code CODE>
+constexpr bool is_supported = (legate::is_integral<CODE>::value && CODE != legate::Type::Code::BOOL);
 
 struct map_labels_fn {
-  template <legate::LegateTypeCode CODE, std::enable_if_t<is_supported<CODE>>* = nullptr>
+  template <legate::Type::Code CODE, std::enable_if_t<is_supported<CODE>>* = nullptr>
   void operator()(legate::Store& labels, legate::Store& classes, legate::Store& output)
   {
     using VAL = legate::legate_type_of<CODE>;
@@ -58,7 +58,7 @@ struct map_labels_fn {
     }
   }
 
-  template <legate::LegateTypeCode CODE, std::enable_if_t<!is_supported<CODE>>* = nullptr>
+  template <legate::Type::Code CODE, std::enable_if_t<!is_supported<CODE>>* = nullptr>
   void operator()(legate::Store& labels, legate::Store& classes, legate::Store& output){
     LEGATE_ABORT;
   }

@@ -37,7 +37,7 @@ namespace {
 
 struct sparse_csr_mm_fn_cpu {
 
-  template <legate::LegateTypeCode CODE>
+  template <legate::Type::Code CODE>
   void operator()(
       legate::Store& Ax, legate::Store& Aj, legate::Store& Ap,
       legate::Store& B, legate::Store& C)
@@ -69,12 +69,12 @@ struct sparse_csr_mm_fn_cpu {
   }
 };
 
-template <legate::LegateTypeCode CODE>
-constexpr bool is_supported_gpu = (CODE == FLOAT_LT || CODE == DOUBLE_LT);
+template <legate::Type::Code CODE>
+constexpr bool is_supported_gpu = (CODE == legate::Type::Code::FLOAT32 || CODE == legate::Type::Code::FLOAT64);
 
 struct sparse_csr_mm_fn_gpu {
 
-  template <legate::LegateTypeCode CODE, std::enable_if_t<is_supported_gpu<CODE>>* = nullptr>
+  template <legate::Type::Code CODE, std::enable_if_t<is_supported_gpu<CODE>>* = nullptr>
   void operator()(
       legate::Store& Ax, legate::Store& Aj, legate::Store& Ap,
       legate::Store& B, legate::Store& C,
@@ -147,7 +147,7 @@ struct sparse_csr_mm_fn_gpu {
     handle.sync_stream();
   }
 
-  template <legate::LegateTypeCode CODE, std::enable_if_t<!is_supported_gpu<CODE>>* = nullptr>
+  template <legate::Type::Code CODE, std::enable_if_t<!is_supported_gpu<CODE>>* = nullptr>
   void operator()(
       legate::Store& Ax, legate::Store& Aj, legate::Store& Ap,
       legate::Store& B, legate::Store& C,

@@ -18,13 +18,30 @@ from numbers import Number
 from typing import TypeAlias
 
 import numpy as np
-import pyarrow as pa
 from legate.core import Store
 from legate.core import types as ty
 from legate.core._legion.future import Future
 
 from .cffi import OpCode
 from .library import user_context as context
+
+_NP2LT_TYPES = {
+    np.dtype(np.bool_): ty.bool_,
+    np.dtype(np.int8): ty.int8,
+    np.dtype(np.int16): ty.int16,
+    np.dtype(np.int32): ty.int32,
+    np.dtype(np.int64): ty.int64,
+    np.dtype(np.uint8): ty.uint8,
+    np.dtype(np.uint16): ty.uint16,
+    np.dtype(np.uint32): ty.uint32,
+    np.dtype(np.uint64): ty.uint64,
+    np.dtype(np.float16): ty.float16,
+    np.dtype(np.float32): ty.float32,
+    np.dtype(np.float64): ty.float64,
+    np.dtype(np.complex64): ty.complex64,
+    np.dtype(np.complex128): ty.complex128,
+    np.dtype(np.str_): ty.string,
+}
 
 
 @dataclass
@@ -49,7 +66,7 @@ class _NDArray:
 
 def as_store(array: np.ndarray) -> Store:
     store = context.create_store(
-        pa.from_numpy_dtype(array.dtype),
+        _NP2LT_TYPES[array.dtype],
         shape=array.shape,
         optimize_scalar=False,
     )
@@ -73,7 +90,7 @@ def as_array(store: Store) -> np.ndarray:
         alloc = store.get_inline_allocation(context)
 
         def construct_ndarray(shape, address, strides):
-            dtype = np.dtype(store.get_dtype().type.to_pandas_dtype())
+            dtype = store.type.to_numpy_dtype()
 
             initializer = _NDArray(shape, dtype.str, address, strides, False)
             result = np.asarray(initializer)
@@ -89,12 +106,12 @@ def as_scalar(store: Store) -> Number:
     return array.item()
 
 
-_NativeLegateType: TypeAlias = ty._Dtype | pa.DataType
+_NativeLegateType: TypeAlias = ty.Dtype
 DataType: TypeAlias = type | np.dtype | _NativeLegateType
 
 
-def _determine_dtype(dtype: DataType) -> pa.DataType:
-    if type(dtype) in (ty._Dtype, pa.DataType):
+def _determine_dtype(dtype: DataType) -> ty.Dtype:
+    if type(dtype) is ty.Dtype:
         return dtype
     elif dtype is int:
         return ty.int64
@@ -102,11 +119,6 @@ def _determine_dtype(dtype: DataType) -> pa.DataType:
         return ty.float64
     elif dtype is bool:
         return ty.bool_
-    else:
-        try:
-            return pa.from_numpy_dtype(dtype)
-        except NotImplementedError:
-            pass
 
     raise ValueError(f"Unsupported dtype: {dtype} ({type(dtype)})")
 

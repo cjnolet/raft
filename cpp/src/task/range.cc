@@ -24,7 +24,7 @@ namespace legate_raft {
 namespace {
 
 struct range_fn {
-  template <legate::LegateTypeCode CODE, int32_t DIM>
+  template <legate::Type::Code CODE, int32_t DIM>
   void operator()(legate::Store& output, legate::Scalar& start, legate::Scalar& step)
   {
     using VAL = legate::legate_type_of<CODE>;

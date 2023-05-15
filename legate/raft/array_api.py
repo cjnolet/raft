@@ -19,7 +19,6 @@ from numbers import Number
 
 import legate.core.types as ty
 import numpy as np
-import pyarrow as pa
 from legate.core import Store
 
 from legate.raft.cffi import OpCode
@@ -28,7 +27,7 @@ from legate.raft.library import user_context as context
 from legate.raft.util import promote
 
 
-def _determine_dtype_from_scalar(value) -> pa.DataType:
+def _determine_dtype_from_scalar(value) -> ty.Dtype:
     try:
         return _determine_dtype(getattr(value, "type", getattr(value, "dtype")))
     except AttributeError:
@@ -61,10 +60,10 @@ def srange(start, stop=None, step=None, dtype=None) -> Store:
 
     if dtype is None:
         try:
-            dtype = pa.from_numpy_dtype(stop.dtype)
+            dtype = stop.dtype
         except AttributeError:
             stop = np.asanyarray(stop)
-            dtype = pa.from_numpy_dtype(stop.dtype)
+            dtype = stop.dtype
 
     size = (stop - start) // step
     shape = (size,)
@@ -225,7 +224,7 @@ def add(x1: Store | Number, x2: Store | Number) -> Store | Number:
 
 
 def negative(lhs: Store) -> Store:
-    minus_one = fill((lhs.shape), lhs.type.type.to_pandas_dtype()(-1))
+    minus_one = fill((lhs.shape), -1, lhs.type)
     result = context.create_store(lhs.type, lhs.shape)
 
     task = context.create_auto_task(OpCode.MUL)
@@ -309,14 +308,8 @@ def unique(input: Store, radix: int = 4) -> Store:
     if input.ndim > 1:
         raise ValueError("`unique` accepts only 1D stores")
 
-    dtype = input.type.type
-    # if num.dtype(dtype.to_pandas_dtype()).kind in ("f", "c"):
-    #     raise ValueError(
-    #         "`unique` doesn't support floating point or complex numbers"
-    #     )
-
     # Create an unbound store to collect local results
-    result = context.create_store(dtype, shape=None, ndim=1)
+    result = context.create_store(input.type, shape=None, ndim=1)
 
     task = context.create_auto_task(OpCode.UNIQUE)
     task.add_input(input)

@@ -29,12 +29,12 @@ namespace legate_raft {
 namespace {
 
 
-template <legate::LegateTypeCode CODE>
+template <legate::Type::Code CODE>
 constexpr bool is_supported = legate::is_floating_point<CODE>::value;
 
 struct sparse_count_features_fn_cpu {
 
-  template <legate::LegateTypeCode CODE, std::enable_if_t<is_supported<CODE>>* = nullptr>
+  template <legate::Type::Code CODE, std::enable_if_t<is_supported<CODE>>* = nullptr>
   void operator()(
       legate::Store& data, legate::Store& rows, legate::Store& cols,
       legate::Store& labels, legate::Store& result)
@@ -61,7 +61,7 @@ struct sparse_count_features_fn_cpu {
     }
   }
 
-  template <legate::LegateTypeCode CODE, std::enable_if_t<!is_supported<CODE>>* = nullptr>
+  template <legate::Type::Code CODE, std::enable_if_t<!is_supported<CODE>>* = nullptr>
   void operator()(
       legate::Store& data, legate::Store& rows, legate::Store& cols,
       legate::Store& labels, legate::Store& result)
@@ -108,12 +108,12 @@ template __global__ void count_features_coo_kernel(
   int, int, int, const int64_t *, int, bool
 );
 
-template <legate::LegateTypeCode CODE>
-constexpr bool is_supported_gpu = (CODE == FLOAT_LT);
+template <legate::Type::Code CODE>
+constexpr bool is_supported_gpu = (CODE == legate::Type::Code::FLOAT32);
 
 struct sparse_count_features_fn_gpu {
 
-  template <legate::LegateTypeCode CODE, std::enable_if_t<is_supported_gpu<CODE>>* = nullptr>
+  template <legate::Type::Code CODE, std::enable_if_t<is_supported_gpu<CODE>>* = nullptr>
   void operator()(
       legate::Store& data, legate::Store& rows, legate::Store& cols,
       legate::Store& labels, legate::Store& result,
@@ -155,7 +155,7 @@ struct sparse_count_features_fn_gpu {
     );
   }
 
-  template <legate::LegateTypeCode CODE, std::enable_if_t<!is_supported_gpu<CODE>>* = nullptr>
+  template <legate::Type::Code CODE, std::enable_if_t<!is_supported_gpu<CODE>>* = nullptr>
   void operator()(
       legate::Store& data, legate::Store& rows, legate::Store& cols,
       legate::Store& labels, legate::Store& result,

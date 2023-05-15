@@ -24,11 +24,11 @@ namespace legate_raft {
 
 namespace {
 
-  template <legate::LegateTypeCode CODE>
-  constexpr bool is_supported = (legate::is_integral<CODE>::value && CODE != BOOL_LT);
+  template <legate::Type::Code CODE>
+  constexpr bool is_supported = (legate::is_integral<CODE>::value && CODE != legate::Type::Code::BOOL);
 
   struct invert_labels_fn {
-    template <legate::LegateTypeCode CODE, std::enable_if_t<is_supported<CODE>>* = nullptr>
+    template <legate::Type::Code CODE, std::enable_if_t<is_supported<CODE>>* = nullptr>
     void operator()(legate::Store& labels, legate::Store& classes, legate::Store& output)
     {
       using VAL = legate::legate_type_of<CODE>;
@@ -46,7 +46,7 @@ namespace {
       }
     }
 
-    template <legate::LegateTypeCode CODE, std::enable_if_t<!is_supported<CODE>>* = nullptr>
+    template <legate::Type::Code CODE, std::enable_if_t<!is_supported<CODE>>* = nullptr>
     void operator()(legate::Store& labels, legate::Store& classes, legate::Store& output) {
       LEGATE_ABORT;
     }
@@ -63,7 +63,7 @@ class InvertLabelsTask : public Task<InvertLabelsTask, INVERT_LABELS> {
     auto& classes = context.inputs()[1];
     auto& output = context.outputs()[0];
 
-    legate::type_dispatch(legate::LegateTypeCode::UINT64_LT, invert_labels_fn{}, labels, classes, output);
+    legate::type_dispatch(legate::Type::Code::UINT64, invert_labels_fn{}, labels, classes, output);
   }
 };
 

@@ -17,15 +17,15 @@
 #include "legate_library.h"
 #include "legate_raft_cffi.h"
 
+#include "core/type/type_traits.h"
 #include "core/utilities/dispatch.h"
-#include "core/utilities/type_traits.h"
 
 namespace legate_raft {
 
 namespace {
 
 struct histogram_fn {
-  template <legate::LegateTypeCode CODE,
+  template <legate::Type::Code CODE,
             std::enable_if_t<!legate::is_complex<CODE>::value>* = nullptr>
   void operator()(legate::Store& result, legate::Store& input, legate::Store& bins)
   {
@@ -53,7 +53,7 @@ struct histogram_fn {
     }
   }
 
-  template <legate::LegateTypeCode CODE,
+  template <legate::Type::Code CODE,
             std::enable_if_t<legate::is_complex<CODE>::value>* = nullptr>
   void operator()(legate::Store& result, legate::Store& input, legate::Store& bins)
   {
