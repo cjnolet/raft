@@ -33,8 +33,10 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
 
             void* nccl_com = context.communicators()[0].get<void*>();
 
+	    ncclComm_t* nccl_comm = (ncclComm_t*)nccl_com;
+
             int rank;
-            ncclCommUserRank((ncclComm_t)nccl_com, &rank);
+            ncclCommUserRank(*nccl_comm, &rank);
 
             printf("Got NCCL comms!\n");
 
@@ -96,7 +98,8 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
             printf("Returned centroids_buffer\n");
 
 
-	        centroids.return_data(centroids_buffer, buffer_alloc_size);
+	    //if(rank == 0)
+	        centroids.bind_data(centroids_buffer, buffer_alloc_size);
         }
     };
 

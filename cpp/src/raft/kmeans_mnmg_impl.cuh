@@ -33,6 +33,7 @@
 #include <thrust/reduce.h>
 #include <thrust/scan.h>
 #include <thrust/transform.h>
+#include <vector>
 
 #include <cstdint>
 
@@ -352,39 +353,45 @@
 
 			printf("Allocating host pinned memory\n");
 
-                        int* nPtsSampledByRank;
-                        RAFT_CUDA_TRY(cudaMallocHost(&nPtsSampledByRank, n_rank * sizeof(int)));
+                        size_t* nPtsSampledByRank;
+			rmm::device_uvector<size_t> nPtsSampledByRankVec(n_rank, handle.get_stream());
+			nPtsSampledByRank = nPtsSampledByRankVec.data();
+
 
                         /// <<<< Step-5 >>> : C = C U C'
                         // append the data in Cp from all ranks to the buffer holding the
                         // potentialCentroids
                         // RAFT_CUDA_TRY(cudaMemsetAsync(nPtsSampledByRank, 0, n_rank * sizeof(int), stream));
-                        std::fill(nPtsSampledByRank, nPtsSampledByRank + n_rank, 0);
-                        nPtsSampledByRank[my_rank] = inRankCp.size() / n_features;
+                        RAFT_CUDA_TRY(cudaMemsetAsync(nPtsSampledByRank, 0, n_rank*sizeof(size_t), handle.get_stream()));
+ 
+		        size_t nPts = inRankCp.size() / n_features;	
+			raft::copy(nPtsSampledByRank + my_rank, &nPts, 1, handle.get_stream());
+                        //nPtsSampledByRank[my_rank] = inRankCp.size() / n_features;
                         comm.allgather(&(nPtsSampledByRank[my_rank]), nPtsSampledByRank, 1, stream);
                         ASSERT(comm.sync_stream(stream) == raft::comms::status_t::SUCCESS,
                                "An error occurred in the distributed operation. This can result "
                                "from a failed rank");
 
-                        auto nPtsSampled =
-                                thrust::reduce(thrust::host, nPtsSampledByRank, nPtsSampledByRank + n_rank, 0);
+                        size_t nPtsSampled =
+                                thrust::reduce(handle.get_thrust_policy(), nPtsSampledByRank, nPtsSampledByRank + n_rank, 0);
 
                         // gather centroids from all ranks
-                        std::vector<size_t> sizes(n_rank);
+                        std::vector<size_t> rank_sizes(n_rank);
                         thrust::transform(
-                                thrust::host, nPtsSampledByRank, nPtsSampledByRank + n_rank, sizes.begin(), [&](int val) {
+                                handle.get_thrust_policy(), nPtsSampledByRank, nPtsSampledByRank + n_rank, nPtsSampledByRank, [=] __device__ (size_t val) {
                                     return val * n_features;
                                 });
+			raft::update_host(rank_sizes.data(), nPtsSampledByRank, (size_t)n_rank, handle.get_stream());
+			handle.sync_stream();
 
-                        RAFT_CUDA_TRY_NO_THROW(cudaFreeHost(nPtsSampledByRank));
 
                         std::vector<size_t> displs(n_rank);
-                        thrust::exclusive_scan(thrust::host, sizes.begin(), sizes.end(), displs.begin());
+                        thrust::exclusive_scan(thrust::host, rank_sizes.begin(), rank_sizes.end(), displs.begin());
 
                         centroidsBuf.resize(centroidsBuf.size() + nPtsSampled * n_features, stream);
                         comm.allgatherv<DataT>(inRankCp.data(),
                                                centroidsBuf.end() - nPtsSampled * n_features,
-                                               sizes.data(),
+                                               rank_sizes.data(),
                                                displs.data(),
                                                stream);
 

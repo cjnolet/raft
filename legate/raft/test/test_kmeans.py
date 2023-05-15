@@ -1,4 +1,4 @@
-from legate.raft.kmeans import KMeans
+from legate.raft  import KMeans
 import numpy as np
 import sys
 
@@ -11,7 +11,7 @@ def test_kmeans(n_gpus, n_rows, n_cols, k):
     model = KMeans(n_gpus)
     model.fit(X, k)
 
-    #print(str(model.centroids_))
+    print(str(model.centroids_))
 
 
 if __name__ == "__main__":
