@@ -54,6 +54,8 @@ class MultinomialNB:
 
 
 if __name__ == "__main__":
+    from time import perf_counter
+
     from conftest import _nlp_20news
     from numpy.testing import assert_equal
     from sklearn.metrics import accuracy_score
@@ -61,26 +63,29 @@ if __name__ == "__main__":
 
     X, y = _nlp_20news()
 
-    n_rows = 500
-    n_cols = 10000
+    n_rows = -1
+    n_cols = -1
 
     X = X[:n_rows, :n_cols]
     y = y[:n_rows]
 
-    print("START")
-
-    estimator = MultinomialNB()
+    tic = perf_counter()
     sk_estimator = skNB()
-
-    estimator.fit(X, y)
     sk_estimator.fit(X, y)
+    sk_y_hat = sk_estimator.predict(X)
+    toc = perf_counter()
+    print("sklearn", toc - tic)
 
+    tic = perf_counter()
+    estimator = MultinomialNB()
+    estimator.fit(X, y)
+    y_hat = estimator.predict(X)
+    toc = perf_counter()
+    print("legate", toc - tic)
+
+    print("TEST")
     assert_equal(as_array(estimator.feature_count_), sk_estimator.feature_count_)
     assert_equal(as_array(estimator.class_count_), sk_estimator.class_count_)
-
-    y_hat = estimator.predict(X)
-    sk_y_hat = sk_estimator.predict(X)
-
     print(accuracy_score(y, sk_y_hat))
     print(accuracy_score(y, y_hat))
-    print("END")
+    print("DONE")
