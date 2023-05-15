@@ -28,6 +28,8 @@ namespace legate_raft {
         namespace alloc {
 
             struct Allocator {
+
+	        Allocator() = default; 
                 template<typename T>
                 T *allocate_elements(size_t num_elements) {
                     return static_cast<T *>(allocate(sizeof(T) * num_elements));
@@ -45,18 +47,57 @@ namespace legate_raft {
             public:
                 DeferredBufferAllocator() = default;
 
-                DeferredBufferAllocator(Legion::Memory::Kind kind);
+                DeferredBufferAllocator(Legion::Memory::Kind kind): target_kind(kind), Allocator() {}
 
-                virtual ~DeferredBufferAllocator();
+                ~DeferredBufferAllocator() {
+                    for(auto& pair : buffers) { pair.second.destroy(); }
+		    buffers.clear();
+		}
 
             public:
-                virtual void *allocate(size_t bytes) override;
+                void *allocate(size_t bytes) override {
+                 if (bytes == 0) return nullptr;
 
-                virtual void deallocate(void *p) override;
+  // Use 16-byte alignment
+  bytes = (bytes + 15) / 16 * 16;
+  Legion::Rect<1> bounds(Legion::Point<1>(0), Legion::Point<1>(bytes - 1));
 
-                bool is_popped(const void *p) const;
+  Buffer buffer(target_kind, Legion::Domain(bounds));
+  void* ptr = buffer.ptr(0);
+#ifdef DEBUG_LEGATE_RAFT
+  assert(buffers.find(ptr) == buffers.end());
+#endif
+  buffers[ptr] = buffer;
+  return ptr; 
+		}
 
-                Buffer pop_allocation(const void *p);
+                void deallocate(void *p) override {
+
+			Buffer buffer;
+  auto finder = buffers.find(p);
+#ifdef DEBUG_LEGATE_RAFT
+  assert(finder != buffers.end() || removed.find(p) != removed.end());
+#endif
+  if (finder == buffers.end()) return;
+  buffer = finder->second;
+  buffers.erase(finder);
+  buffer.destroy();
+		}
+
+                bool is_popped(const void *p) const {
+			return buffers.find(p) == buffers.end();
+		}
+
+                Buffer pop_allocation(const void *p) {
+                      auto finder = buffers.find(p);
+#ifdef DEBUG_LEGATE_RAFT
+  assert(finder != buffers.end());
+  removed.insert(finder->first);
+#endif
+  auto result = finder->second;
+  buffers.erase(finder);
+  return result;
+		}
 
             private:
                 Legion::Memory::Kind target_kind{Legion::Memory::Kind::SYSTEM_MEM};
