@@ -44,8 +44,7 @@ target_include_directories(legate_raft
         $<INSTALL_INTERFACE:include>
         )
 
-# target_link_libraries(legate_raft PRIVATE legate::core raft::raft raft::compiled raft::distributed)
-target_link_libraries(legate_raft PRIVATE legate::core raft::raft raft::compiled)
+target_link_libraries(legate_raft PRIVATE legate::core raft::raft raft::compiled raft::distributed)
 
 
 install(TARGETS legate_raft
