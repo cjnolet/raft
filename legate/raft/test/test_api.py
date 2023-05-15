@@ -84,19 +84,12 @@ def test_csr_matmat():
         ]
     )
 
-    B = csr_array(
-        [
-            [1, 0, 0, 0, 0],
-            [0, 2, 3, 0, 0],
-            [0, 0, 0, 4, 0],
-            [0, 0, 0, 5, 6],
-        ]
-    )
+    B = np.array([[1, 0, 0, 0], [0, 2, 3, 0], [0, 0, 0, 4], [0, 0, 0, 5], [0, 0, 0, 6]])
 
     C = A @ B
-    C_store = as_sparse_store(A) @ as_sparse_store(B)
+    C_store = as_sparse_store(A) @ as_store(B)
 
-    assert_array_equal(C.todense(), C_store.to_sparse_array().todense())
+    assert_array_equal(C, as_array(C_store))
 
 
 def test_spmm():
