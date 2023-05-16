@@ -26,6 +26,7 @@
 #include <cuda_runtime.h>
 #include "allocator.hpp"
 #include <legate/core/cuda/stream_pool.h>
+#include <rmm/mr/device/pool_memory_resource.hpp>
 
 namespace legate_raft {
 
