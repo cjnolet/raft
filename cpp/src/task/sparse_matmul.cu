@@ -178,7 +178,7 @@ class SparseCSRMMTask : public Task<SparseCSRMMTask, SPARSE_CSR_MM> {
       auto& Aj = context.inputs().at(1);
       auto& Ap = context.inputs().at(2);
       auto& B = context.inputs().at(3);
-      auto& C = context.outputs().at(0);
+      auto& C = context.reductions().at(0);
 
       auto m = context.scalars().at(0).value<int32_t>();
       auto k = context.scalars().at(1).value<int32_t>();

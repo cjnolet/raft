@@ -10,7 +10,6 @@ from legate.raft.core import as_store
 from .array_api import fill
 from .cffi import OpCode
 from .core import as_array, convert
-from .library import get_legate_runtime
 from .library import user_context as context
 
 SparseArray: TypeAlias = csr_array | csr_matrix | coo_array | coo_matrix
@@ -140,12 +139,7 @@ def _csr_mm(A: CSRStore, B: Store) -> Store:
     task.add_input(B)
     task.add_broadcast(B)
 
-    runtime = get_legate_runtime()
-    if runtime.num_gpus > 0:
-        task.add_output(C)
-        # task.add_broadcast(C)
-    else:
-        task.add_reduction(C, ty.ReductionOp.ADD)
+    task.add_reduction(C, ty.ReductionOp.ADD)
 
     task.add_scalar_arg(m, ty.int32)
     task.add_scalar_arg(k, ty.int32)
