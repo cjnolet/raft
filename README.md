@@ -43,7 +43,7 @@ or with `pytest`:
 legate --module pytest naive_bayes/tests.py
 ```
 
-_The tests require **scikit-learn**.
+_The tests require **scikit-learn**._
 
 ### K-NN
 
