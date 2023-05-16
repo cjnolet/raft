@@ -22,6 +22,17 @@ Currently a sharing ground for building legate-enabled versions of naive bayes, 
 
 ### Naive Bayes
 
+_Implementation state:_
+
+|         | cpu | gpu | mcpu | mgpu | mncpu | mngpu
+|---------|-----|-----|------|------|-------|------
+| fit     | ✅  |  ✅ |  ✅  | ✅   | ❔    |❔
+| predict | ✅  |  ✅ |  🛑  | 🛑   | ❔    |❔
+
+🛑: Blocked by missing features to express sparse constraints in legate.core.
+
+❔: Not yet tested.
+
 To run tests for Naive Bayes, execute:
 
 ```bash
