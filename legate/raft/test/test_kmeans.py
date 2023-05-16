@@ -11,6 +11,8 @@ def test_kmeans(n_gpus, n_rows, n_cols, k):
     model = KMeans(n_gpus)
     model.fit(X, k)
 
+    print("Printing centroids")
+
     print(str(model.centroids_))
 
 

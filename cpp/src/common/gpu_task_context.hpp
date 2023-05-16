@@ -18,6 +18,7 @@
 
 
 #include <raft/core/handle.hpp>
+#include <raft/core/device_resources.hpp>
 #include <raft/comms/std_comms.hpp>
 
 #include <nccl.h>
@@ -34,36 +35,57 @@ namespace legate_raft {
 
 class GPUTaskContext {
 public:
-    GPUTaskContext() : allocator_(new DeferredBufferAllocator())
+    GPUTaskContext() : allocator_(nullptr),handle_((cudaStream_t)legate::cuda::StreamPool::get_stream_pool().get_stream())//(new DeferredBufferAllocator())
     {
-        cudaStream_t stream = legate::cuda::StreamPool::get_stream_pool().get_stream();
-        handle_ = new raft::handle_t{stream};
+	printf("Initializing gputaskcontext\n");
 
-        rmm::mr::set_current_device_resource(allocator_);
+        rmm::mr::cuda_memory_resource cuda_mr;
+        rmm::mr::pool_memory_resource<rmm::mr::cuda_memory_resource> pool_mr{&cuda_mr};
+        rmm::mr::set_current_device_resource(&pool_mr);
+
+        //rmm::mr::set_current_device_resource(allocator_);
     }
     ~GPUTaskContext()
     {
-        rmm::mr::set_current_device_resource(nullptr);
         delete allocator_;
-        delete handle_;
+
+	printf("Deleted allocator\n");
+
+
+        rmm::mr::set_current_device_resource(nullptr);
+
     }
 
     void inject_nccl_comm(ncclComm_t nccl_comm) {
+
+	printf("Getting ncclCommCount\n");
         int n_ranks;
-        ncclCommCount(nccl_comm, &n_ranks);
+        RAFT_NCCL_TRY(ncclCommCount(nccl_comm, &n_ranks));
+
+	printf("Getting ncclCommUserRank\n");
+	fflush(stdout);
 
         int rank;
-        ncclCommUserRank(nccl_comm, &rank);
+        RAFT_NCCL_TRY(ncclCommUserRank(nccl_comm, &rank));
         printf("NCCL Rank: %d, n_ranks=%d\n", rank, n_ranks);
 
-        raft::comms::build_comms_nccl_only(handle_, nccl_comm, n_ranks, rank);
+	printf("Device id: %d\n", handle_.get_device());
+
+	handle_.sync_stream();
+
+
+
+
+        raft::comms::build_comms_nccl_only(&handle_, nccl_comm, n_ranks, rank);
+
+	printf("Done injecting nccl comm on handle\n");
     }
 
-    raft::handle_t &handle() const { return *handle_; }
+    raft::handle_t &handle() { return handle_; }
 
 private:
     DeferredBufferAllocator *allocator_{nullptr};
-    raft::handle_t *handle_{nullptr};
+    raft::handle_t handle_{};
 };
 
 }  // namespace legate_raft

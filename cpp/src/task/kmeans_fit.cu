@@ -19,7 +19,6 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
         static void gpu_variant(legate::TaskContext& context)
         {
             GPUTaskContext task_context{};
-            auto handle = task_context.handle();
 
             printf("Starting kmeans task\n");
             int k = context.scalars()[0].value<int>();
@@ -27,13 +26,12 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
             printf("k=%d\n", k);
 
             auto& X = context.inputs()[0];
-//            auto& labels = context.outputs()[1];
 
-            printf("Got X\n");
-            printf("Got centroids!\n");
-
-            auto nccl_com = context.communicators()[0].get<ncclComm_t>();
+            ncclComm_t nccl_com = *(context.communicators()[0].get<ncclComm_t*>());
             task_context.inject_nccl_comm(nccl_com);
+
+            auto handle = task_context.handle();
+
 
             int rank = handle.get_comms().get_rank();
             printf("Got NCCL comms!\n");
@@ -70,7 +68,6 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
 	    }
 
             printf("Got centroids_buffer!\n");
-//            int* labels_write = labels.write_accessor<int, 2>().ptr(Legion::DomainPoint(offset));
 
             float inertia = 0;
             int n_iter;
@@ -94,6 +91,9 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
 
 
 	    //if(rank == 0)
+
+	    if(rank == 0)
+		    printf("Writing bind_data\n");
 	        centroids.bind_data(centroids_buffer, buffer_alloc_size);
         }
     };
