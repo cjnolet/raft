@@ -13,7 +13,7 @@ Currently a sharing ground for building legate-enabled versions of naive bayes, 
 2. Install RAFT into your `legate` conda environment:
 
     ```bash
-    mamba install -c conda-forge -c rapidsai-nightly -c nvidia libraft==23.04*
+    mamba install -c conda-forge -c rapidsai-nightly -c nvidia libraft==23.06*
     ```
 
 2. Use `build.sh` to build this repository.
