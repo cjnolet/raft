@@ -31,26 +31,33 @@ class MultinomialNB:
         X = COOStore.from_sparse_array(X)
         y = as_store(y)
 
-        Y, self.classes_ = make_monotonic(y)
+        Y, self._classes_ = make_monotonic(y)
 
-        self.n_classes_ = self.classes_.shape[0]
+        self.n_classes_ = self._classes_.shape[0]
         self.n_features_ = X.shape[1]
 
-        self.feature_count_ = count_features(X, y, self.n_classes_)
-        smoothed_fc = add(self.feature_count_, self.alpha)
+        self._feature_count_ = count_features(X, y, self.n_classes_)
+        smoothed_fc = add(self._feature_count_, self.alpha)
         smoothed_cc = sum_over_axis(smoothed_fc, axis=1)
-        self.feature_log_prob_ = T(subtract(T(log(smoothed_fc)), log(smoothed_cc)))
+        self._feature_log_prob_ = T(subtract(T(log(smoothed_fc)), log(smoothed_cc)))
 
-        self.class_count_ = bincount(Y, num_bins=self.n_classes_)
-        self.class_log_prior_ = fill(
-            self.n_classes_, -log(self.n_classes_), dtype=self.feature_log_prob_.type
+        self._class_count_ = bincount(Y, num_bins=self.n_classes_)
+        self._class_log_prior_ = fill(
+            self.n_classes_, -log(self.n_classes_), dtype=self._feature_log_prob_.type
         )
 
     def predict(self, X):
-        X = CSRStore.from_sparse_array(X).to_type(self.feature_log_prob_.type)
-        jll = add(X @ T(self.feature_log_prob_), self.class_log_prior_)
+        X = CSRStore.from_sparse_array(X).to_type(self._feature_log_prob_.type)
+        jll = add(X @ T(self._feature_log_prob_), self._class_log_prior_)
         indices = argmax(jll, axis=1)
-        return as_array(invert_labels(indices, self.classes_))
+        return as_array(invert_labels(indices, self._classes_))
+
+    def __getattr__(self, name):
+        # Expose store-objects as arrays when possible.
+        try:
+            return as_array(self.__getattribute__(f"_{name}"))
+        except AttributeError:
+            raise AttributeError(name)
 
 
 if __name__ == "__main__":
@@ -84,8 +91,8 @@ if __name__ == "__main__":
     print("legate", toc - tic)
 
     print("TEST")
-    assert_equal(as_array(estimator.feature_count_), sk_estimator.feature_count_)
-    assert_equal(as_array(estimator.class_count_), sk_estimator.class_count_)
+    assert_equal(estimator.feature_count_, sk_estimator.feature_count_)
+    assert_equal(estimator.class_count_, sk_estimator.class_count_)
     print(accuracy_score(y, sk_y_hat))
     print(accuracy_score(y, y_hat))
     print("DONE")
