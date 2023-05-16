@@ -1,14 +1,14 @@
 import numpy as np
+import pytest
 from hypothesis import assume, example, given, note, settings
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import array_shapes
 from numpy.testing import assert_array_equal
 from scipy.sparse import csr_array
 
-import pytest
-
-from .sparse import CSRStore, as_sparse_store
-from .util import broadcast_shape, promote
+from legate.raft.core import as_array, as_store
+from legate.raft.sparse import CSRStore, as_sparse_store
+from legate.raft.util import broadcast_shape, promote
 
 
 @given(a=array_shapes(), b=array_shapes())
@@ -84,16 +84,27 @@ def test_csr_matmat():
         ]
     )
 
-    B = csr_array(
-        [
-            [1, 0, 0, 0, 0],
-            [0, 2, 3, 0, 0],
-            [0, 0, 0, 4, 0],
-            [0, 0, 0, 5, 6],
-        ]
-    )
+    B = np.array([[1, 0, 0, 0], [0, 2, 3, 0], [0, 0, 0, 4], [0, 0, 0, 5], [0, 0, 0, 6]])
 
     C = A @ B
-    C_store = as_sparse_store(A) @ as_sparse_store(B)
+    C_store = as_sparse_store(A) @ as_store(B)
 
-    assert_array_equal(C.todense(), C_store.to_sparse_array().todense())
+    assert_array_equal(C, as_array(C_store))
+
+
+def test_spmm():
+    A = [
+        [0, 1, 0],
+        [2, 0, 3],
+        [0, 0, 4],
+    ]
+
+    A = csr_array(A, dtype=np.float32)
+
+    B = np.array([[1, 2], [3, 4], [5, 6]], dtype=np.float32)
+
+    C = np.array([[3, 4], [17, 22], [20, 24]])
+    C_lg = CSRStore.from_sparse_array(A) @ as_store(B)
+
+    assert_array_equal(A @ B, C)
+    assert_array_equal(C, as_array(C_lg))

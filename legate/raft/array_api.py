@@ -14,6 +14,7 @@
 #
 
 
+import math
 from numbers import Number
 
 import legate.core.types as ty
@@ -22,17 +23,21 @@ import pyarrow as pa
 from legate.core import Store
 
 from legate.raft.cffi import OpCode
+from legate.raft.core import _determine_dtype
 from legate.raft.library import user_context as context
 from legate.raft.util import promote
 
 
+def _determine_dtype_from_scalar(value) -> pa.DataType:
+    try:
+        return _determine_dtype(getattr(value, "type", getattr(value, "dtype")))
+    except AttributeError:
+        return _determine_dtype(np.asanyarray(value).dtype)
+
+
 def fill(shape, fill_value, dtype=None) -> Store:
     if dtype is None:
-        try:
-            dtype = pa.from_numpy_dtype(fill_value.dtype)
-        except AttributeError:
-            fill_value = np.asanyarray(fill_value)
-            dtype = pa.from_numpy_dtype(fill_value.dtype)
+        dtype = _determine_dtype_from_scalar(fill_value)
 
     result = context.create_store(dtype, shape, optimize_scalar=(shape == tuple()))
     assert result.type == dtype
@@ -116,6 +121,7 @@ def sum_over_axis(input: Store, axis: int) -> Store:
     task.add_alignment(input, promoted)
 
     task.execute()
+    context.issue_execution_fence()
 
     return result
 
@@ -134,7 +140,10 @@ def _add_constant(input: Store, value: Number) -> Store:
     return result
 
 
-def log(input: Store) -> Store:
+def log(input: Store | Number) -> Store | Number:
+    if isinstance(input, Number):
+        return math.log(input)
+
     result = context.create_store(input.type, input.shape)
 
     task = context.create_auto_task(OpCode.LOG)
@@ -161,6 +170,8 @@ def exp(input: Store) -> Store:
 
 
 def _add_stores(x1: Store, x2: Store) -> Store:
+    assert x1.type == x2.type
+
     result = context.create_store(x1.type, x1.shape)
 
     task = context.create_auto_task(OpCode.ADD)
@@ -176,6 +187,8 @@ def _add_stores(x1: Store, x2: Store) -> Store:
 
 
 def _add_broadcast(x1: Store, x2: Store) -> Store:
+    assert x1.type == x2.type
+
     def func(dim, dim_size):
         nonlocal x2
         x2 = x2.promote(dim, dim_size)

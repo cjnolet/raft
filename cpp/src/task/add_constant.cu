@@ -1,0 +1,129 @@
+/* Copyright 2023 NVIDIA Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#include "legate_library.h"
+#include "legate_raft_cffi.h"
+
+#include "core/cuda/stream_pool.h"
+#include "core/utilities/dispatch.h"
+
+namespace legate_raft {
+
+namespace {
+
+struct add_constant_fn_cpu {
+  template <legate::LegateTypeCode CODE, int32_t DIM>
+  void operator()(legate::Store& output, legate::Store& input, legate::Scalar& value)
+  {
+    using VAL = legate::legate_type_of<CODE>;
+
+    auto shape = input.shape<DIM>();
+
+    if (shape.empty()) return;
+
+    auto input_acc = input.read_accessor<VAL, DIM>();
+    auto output_acc = output.write_accessor<VAL, DIM>();
+
+    for (legate::PointInRectIterator<DIM> it(shape, false /*fortran order*/); it.valid(); ++it) {
+        auto p = *it;
+        output_acc[p] = input_acc[p] + value.value<VAL>();
+    }
+  }
+};
+
+template <legate::LegateTypeCode CODE>
+constexpr bool is_supported_gpu = (CODE == FLOAT_LT || CODE == DOUBLE_LT);
+
+
+template<typename value_t>
+__global__
+void add_constant_kernel(value_t* out, const value_t* in, value_t value)
+{
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  out[idx] = in[idx] + value;
+}
+
+template __global__ void add_constant_kernel(float*, const float*, float);
+template __global__ void add_constant_kernel(double*, const double*, double);
+
+
+struct add_constant_fn_gpu {
+
+  template <legate::LegateTypeCode CODE, int32_t DIM, std::enable_if_t<is_supported_gpu<CODE>>* = nullptr>
+  void operator()(legate::Store& output, legate::Store& input, legate::Scalar& value)
+  {
+    using VAL = legate::legate_type_of<CODE>;
+
+    auto shape = input.shape<DIM>();
+
+    if (shape.empty()) return;
+
+    auto volume = shape.volume();
+
+    int block_size = 256;  // TODO: tune
+    int num_blocks = (volume + block_size - 1) / block_size;
+
+    auto input_acc = input.read_accessor<VAL, DIM>();
+    auto output_acc = output.write_accessor<VAL, DIM>();
+
+    // TODO: Obtain handle and stream from RMM pool.
+    auto stream = legate::cuda::StreamPool::get_stream_pool().get_stream();
+
+    add_constant_kernel<<<num_blocks, block_size, 0, stream>>>(
+      output_acc.ptr(shape), input_acc.ptr(shape), value.value<VAL>()
+    );
+  }
+
+  template <legate::LegateTypeCode CODE, int32_t DIM, std::enable_if_t<!is_supported_gpu<CODE>>* = nullptr>
+  void operator()(legate::Store& output, legate::Store& input, legate::Scalar& value)
+  {
+    LEGATE_ABORT;
+  }
+};
+
+}  // namespace
+
+class AddConstantTask : public Task<AddConstantTask, ADD_CONSTANT> {
+ public:
+  static void cpu_variant(legate::TaskContext& context)
+  {
+    auto& input  = context.inputs()[0];
+    auto& value  = context.scalars()[0];
+    auto& output = context.outputs()[0];
+
+    legate::double_dispatch(input.dim(), input.code(), add_constant_fn_cpu{}, output, input, value);
+  }
+
+  static void gpu_variant(legate::TaskContext& context)
+  {
+    auto& input  = context.inputs()[0];
+    auto& value  = context.scalars()[0];
+    auto& output = context.outputs()[0];
+
+    legate::double_dispatch(input.dim(), input.code(), add_constant_fn_gpu{}, output, input, value);
+  }
+};
+
+}  // namespace legate_raft
+
+namespace {
+
+static void __attribute__((constructor)) register_tasks()
+{
+  legate_raft::AddConstantTask::register_variants();
+}
+
+}  // namespace

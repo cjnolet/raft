@@ -16,7 +16,7 @@ from legate.core import types as ty
 
 from .array_api import fill, unique
 from .cffi import OpCode
-from .core import Store
+from .core import Store, convert
 from .library import user_context as context
 from .multiarray import bincount
 from .sparse import SparseStore
@@ -99,21 +99,29 @@ def make_monotonic(labels: Store) -> tuple[Store, Store]:
 
 def count_features(X: SparseStore, Y: Store, n_classes: int) -> Store:
     assert X.shape[0] == Y.shape[0]
+    assert Y.type == ty.int64
 
     n_features = X.shape[1]
     output_shape = (n_classes, n_features)
-    result = fill(output_shape, 0, X.type)
+    result = fill(output_shape, 0, ty.float32)
+
+    n_rows, n_cols = X.shape
 
     task = context.create_auto_task(OpCode.COUNT_FEATURES)
-    task.add_input(X.data)
+    task.add_input(convert(X.data, ty.float32))
     task.add_input(X.row)
     task.add_input(X.col)
     task.add_input(Y)
     task.add_alignment(X.data, X.row)
     task.add_alignment(X.data, X.col)
     task.add_scalar_arg(n_classes, ty.uint64)
-    task.add_broadcast(result)
+    task.add_scalar_arg(n_rows, ty.uint64)
+    task.add_scalar_arg(n_cols, ty.uint64)
+    task.add_scalar_arg(n_features, ty.uint64)
+    # TODO: Replace with better constraints.
+    task.add_broadcast(Y)
     task.add_reduction(result, ty.ReductionOp.ADD)
+    task.add_broadcast(result)
 
     task.execute()
     return result

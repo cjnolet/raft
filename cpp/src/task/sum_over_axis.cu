@@ -16,8 +16,13 @@
 
 #include "legate_library.h"
 #include "legate_raft_cffi.h"
+#include "pitches.h"
 
+#include "core/cuda/stream_pool.h"
 #include "core/utilities/dispatch.h"
+#include "core/utilities/typedefs.h"
+
+#include <raft/core/handle.hpp>
 
 namespace legate_raft {
 
@@ -53,6 +58,58 @@ struct reduction_fn {
   }
 };
 
+
+template<typename rd_t, typename ro_t, typename shape_t, typename pitches_t>
+__global__
+void sum_over_axis_kernel(rd_t out, ro_t in, shape_t shape, pitches_t pitches)
+{
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  auto volume = shape.volume();
+  if (idx >= volume) return;
+  auto point = pitches.unflatten(idx, shape.lo);
+  out.reduce(point, in[point]);
+}
+
+
+template <legate::LegateTypeCode CODE>
+constexpr bool is_supported = (CODE == FLOAT_LT);
+
+struct reduction_fn_gpu {
+
+  template <legate::LegateTypeCode CODE, int32_t DIM, std::enable_if_t<is_supported<CODE>>* = nullptr>
+  void operator()(legate::Store& output, legate::Store& input)
+  {
+
+    using VAL = legate::legate_type_of<CODE>;
+
+    auto shape = input.shape<DIM>();
+
+    if (shape.empty()) return;
+
+    auto in_acc  = input.read_accessor<VAL, DIM>();
+    auto red_acc = output.reduce_accessor<legate::SumReduction<VAL>, false, DIM>();
+
+    Pitches<DIM - 1> pitches;
+    auto volume = pitches.flatten(shape);
+
+    const int block_size = 256;  // TODO: tune
+    const auto num_blocks = (volume + block_size - 1) / block_size;
+
+    cudaStream_t stream = legate::cuda::StreamPool::get_stream_pool().get_stream();
+    raft::handle_t handle(stream);
+    sum_over_axis_kernel<<<num_blocks, block_size, 0, stream>>>(
+      red_acc, in_acc, shape, pitches
+    );
+    handle.sync_stream();
+  }
+
+  template <legate::LegateTypeCode CODE, int32_t DIM, std::enable_if_t<!is_supported<CODE>>* = nullptr>
+  void operator()(legate::Store& output, legate::Store& input)
+  {
+    LEGATE_ABORT;
+  }
+};
+
 }  // namespace
 
 class SumOverAxisTask : public Task<SumOverAxisTask, SUM_OVER_AXIS> {
@@ -63,6 +120,14 @@ class SumOverAxisTask : public Task<SumOverAxisTask, SUM_OVER_AXIS> {
     auto& output = context.reductions()[0];
 
     legate::double_dispatch(input.dim(), input.code(), reduction_fn{}, output, input);
+  }
+
+  static void gpu_variant(legate::TaskContext& context)
+  {
+    auto& input  = context.inputs()[0];
+    auto& output = context.reductions()[0];
+
+    legate::double_dispatch(input.dim(), input.code(), reduction_fn_gpu{}, output, input);
   }
 };
 
