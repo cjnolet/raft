@@ -34,10 +34,6 @@ legate --module pytest naive_bayes/tests.py
 
 _The tests require **scikit-learn** and **cunumeric**._
 
-- Can potentially copy in `bincount` from legate.core or the `raft::stats::histogram` or other RAFT primitives.
-- maybe we could try to use pylibraft as a legate task if they make progress on exposing legate tasks through Python UDFs?
-- Interested in an end-to-end prototype that uses the underlying indices array from the legate.sparse csr w/ bincount/histogram primitive.
-
 ### K-NN
 
 - Can use the nearest neighbors primitives in `raft::neighbors`
