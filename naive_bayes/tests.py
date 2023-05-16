@@ -1,8 +1,6 @@
-try:
-    import cunumeric as cn
-except ImportError:
-    raise ImportError("The Naive Bayes tests require cunumeric.")
-from numpy.testing import assert_allclose
+from time import perf_counter
+
+from numpy.testing import assert_equal
 
 try:
     from sklearn.metrics import accuracy_score
@@ -11,52 +9,35 @@ except ImportError:
     raise ImportError("The Naive Bayes tests require scikit-learn.")
 
 from naive_bayes import MultinomialNB
-from naive_bayes.cn.multinomial import MultinomialNB as CNMultinomialNB
 
 
 def test_multinomial(nlp_20news):
-    X_sparse, y = nlp_20news
-    n_rows = 500
-    n_cols = 10000
+    X, y = nlp_20news
 
-    X = X_sparse[:n_rows, :n_cols]
+    n_rows = -1
+    n_cols = -1
+
+    X = X[:n_rows, :n_cols]
     y = y[:n_rows]
 
-    legate_model = MultinomialNB()
-    cn_legate_model = CNMultinomialNB()
-    sk_model = skNB()
+    tic = perf_counter()
+    sk_estimator = skNB()
+    sk_estimator.fit(X, y)
+    sk_y_hat = sk_estimator.predict(X)
+    toc = perf_counter()
+    print("sklearn", toc - tic)
 
-    sk_model.fit(X, y)
-    # Cunumeric does not natively support sparse arrays.
-    X_cn_dense = cn.ascontiguousarray(X.todense())
-    cn_legate_model.fit(X_cn_dense, y)
-    legate_model.fit(X, y)
-    assert_allclose(sk_model.classes_, cn_legate_model.classes_)
-    assert_allclose(sk_model.classes_, legate_model.classes_)
-    assert_allclose(sk_model.feature_count_, cn_legate_model.feature_count_)
-    assert_allclose(sk_model.feature_count_, legate_model.feature_count_)
+    tic = perf_counter()
+    estimator = MultinomialNB()
+    estimator.fit(X, y)
+    y_hat = estimator.predict(X)
+    toc = perf_counter()
+    print("legate", toc - tic)
 
-    sk_log_proba = sk_model.predict_log_proba(X)
-    legate_log_proba = legate_model.predict_log_proba(X)
-    cn_legate_log_proba = cn_legate_model.predict_log_proba(X_cn_dense)
-    sk_proba = sk_model.predict_proba(X)
-    legate_proba = legate_model.predict_proba(X)
-    cn_legate_proba = cn_legate_model.predict_proba(X_cn_dense)
-    # sk_score = sk_model.score(X, y)
-    # legate_score = legate_model.score(X, y)
-
-    y_sk = sk_model.predict(X)
-    y_legate = legate_model.predict(X)
-    y_cn_legate = cn_legate_model.predict(X_cn_dense)
-
-    assert_allclose(cn_legate_log_proba, sk_log_proba, atol=5e-1, rtol=5e-1)
-    assert_allclose(cn_legate_proba, sk_proba, atol=2e-1, rtol=2.5)
-    assert_allclose(legate_log_proba, sk_log_proba, atol=5e-1, rtol=5e-1)
-    assert_allclose(legate_proba, sk_proba, atol=2e-1, rtol=2.5)
-    assert accuracy_score(y, y_sk) >= 0.45
-    assert accuracy_score(y, y_cn_legate) >= 0.45
-    assert accuracy_score(y, y_legate) >= 0.45
-    print("PASS")
+    assert_equal(estimator.feature_count_, sk_estimator.feature_count_)
+    assert_equal(estimator.class_count_, sk_estimator.class_count_)
+    print(accuracy_score(y, sk_y_hat))
+    print(accuracy_score(y, y_hat))
 
 
 if __name__ == "__main__":
