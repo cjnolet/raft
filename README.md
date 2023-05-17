@@ -7,7 +7,7 @@ Currently a sharing ground for building legate-enabled versions of naive bayes, 
 
 1. Build and install `legate.core` using [these instructions](https://github.com/nv-legate/legate.core#how-do-i-install-legate).
 
-    Most recently tested against _branch-23.05_ (`d756ff9`).
+    Most recently tested against _branch-23.05_ (`59b59235`).
 
 
 2. Install RAFT into your `legate` conda environment:
