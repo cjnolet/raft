@@ -51,4 +51,14 @@ _The tests require **scikit-learn**._
 
 ### K-Means
 
-- Can use the kmeans primitives in `raft::cluster::kmeans` (which are already used to compose the mnmg kmeans in cuml)
+K-means uses the multi-gpu implementation which is based entirely on building blocks and comms API from RAFT (relies on NCCL for collectives).
+
+Run the kmeans pytest on multiple GPUs
+```bash
+legate --gpus <ngpu> legate/raft/test/test_kmeans.py <ngpu> <nrow> <ncol> <k> 
+```
+
+Example of running `legate.raft` kmeans on 8 gpus:
+```bash
+legate --gpus 8 legate/raft/test/test_kmeans.py 8 50000 500 k
+```
