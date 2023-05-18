@@ -8,6 +8,7 @@ cpp/src/legate_library.cc
 cpp/src/legate_library.h
 cpp/src/legate_library.h.eggs/
 dist/
+legate_raft/
 legate.raft.egg-info/
 legate/raft/__pycache__/
 legate/raft/install_info.py

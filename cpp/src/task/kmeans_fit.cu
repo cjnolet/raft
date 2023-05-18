@@ -18,7 +18,9 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
     public:
         static void gpu_variant(legate::TaskContext& context)
         {
+
             GPUTaskContext task_context{};
+
 
             printf("Starting kmeans task\n");
             int k = context.scalars()[0].value<int>();
