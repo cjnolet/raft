@@ -16,6 +16,11 @@
 
 #pragma once
 
+
+#include "../legate_raft.h"
+#include "../legate_library.h"
+
+
 #include <raft/core/handle.hpp>
 
 #include <nccl.h>
@@ -31,6 +36,9 @@ namespace legate_raft {
 
 class GPUTaskContext {
 public:
+
+    GPUTaskContext();
+    ~GPUTaskContext();
     void inject_nccl_comm(ncclComm_t nccl_comm);
     raft::handle_t &handle();
 

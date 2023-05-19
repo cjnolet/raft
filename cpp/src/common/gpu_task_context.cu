@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <common/gpu_task_context.hpp>
+
 #include <raft/core/handle.hpp>
 #include <raft/core/device_resources.hpp>
 #include <raft/comms/std_comms.hpp>

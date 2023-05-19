@@ -69,7 +69,7 @@ struct add_constant_fn_gpu {
 
     using VAL = legate::legate_type_of<CODE>;
 
-    legate_raft::GpuTaskContext gpu_task_context{};
+    legate_raft::GPUTaskContext gpu_task_context{};
     auto stream = gpu_task_context.handle().get_stream();
 
     auto shape = input.shape<DIM>();
