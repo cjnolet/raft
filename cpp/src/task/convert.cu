@@ -19,7 +19,8 @@
 #include "legate_library.h"
 #include "legate_raft_cffi.h"
 
-#include "core/cuda/stream_pool.h"
+#include <common/gpu_task_context.hpp>
+
 #include "core/utilities/dispatch.h"
 #include "core/utilities/typedefs.h"
 
@@ -69,6 +70,9 @@ struct convert_fn_gpu {
     using SRC = legate::legate_type_of<SRC_TYPE>;
     using DST = legate::legate_type_of<DST_TYPE>;
 
+    legate_raft::GPUTaskContext gpu_task_context{};
+    auto stream = gpu_task_context.handle().get_stream();
+
     auto shape = input.shape<DIM>();
 
     if (shape.empty()) return;
@@ -80,9 +84,6 @@ struct convert_fn_gpu {
 
     int block_size = 256;  // TODO: tune
     int num_blocks = (volume + block_size - 1) / block_size;
-
-    // TODO: Obtain handle and stream from RMM pool.
-    auto stream = legate::cuda::StreamPool::get_stream_pool().get_stream();
 
     convert_kernel<<<num_blocks, block_size, 0, stream>>>(
         input_acc.ptr(shape), output_acc.ptr(shape)

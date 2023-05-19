@@ -17,7 +17,8 @@
 #include <iostream>  // TODO: remove after debugging
 #include <cstdint>
 
-#include "core/cuda/stream_pool.h"
+#include <common/gpu_task_context.hpp>
+
 #include "core/utilities/dispatch.h"
 
 #include "legate_library.h"
@@ -123,7 +124,12 @@ struct sparse_count_features_fn_gpu {
     using value_t = legate::legate_type_of<CODE>;
     using index_t = int32_t;
 
-    auto shape = data.shape<1>();
+
+      legate_raft::GPUTaskContext gpu_task_context{};
+      auto stream = gpu_task_context.handle().get_stream();
+
+
+      auto shape = data.shape<1>();
 
     auto data_acc = data.read_accessor<value_t, 1>();
     auto rows_acc = rows.read_accessor<int32_t, 1>();
@@ -137,8 +143,6 @@ struct sparse_count_features_fn_gpu {
 
     int block_size = 256;  // TODO: tune
     int num_blocks = (nnz + block_size - 1) / block_size;
-
-    auto stream = legate::cuda::StreamPool::get_stream_pool().get_stream();
 
     count_features_coo_kernel<<<num_blocks, block_size, 0, stream>>>(
       result_acc.ptr({0, 0}),

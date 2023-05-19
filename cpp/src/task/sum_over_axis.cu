@@ -17,8 +17,7 @@
 #include "legate_library.h"
 #include "legate_raft_cffi.h"
 #include "pitches.h"
-
-#include "core/cuda/stream_pool.h"
+#include <common/gpu_task_context.hpp>
 #include "core/utilities/dispatch.h"
 #include "core/utilities/typedefs.h"
 
@@ -81,6 +80,9 @@ struct reduction_fn_gpu {
   {
 
     using VAL = legate::legate_type_of<CODE>;
+    legate_raft::GPUTaskContext gpu_task_context{};
+    auto handle = gpu_task_context.handle();
+    auto stream = handle.get_stream();
 
     auto shape = input.shape<DIM>();
 
@@ -95,8 +97,6 @@ struct reduction_fn_gpu {
     const int block_size = 256;  // TODO: tune
     const auto num_blocks = (volume + block_size - 1) / block_size;
 
-    cudaStream_t stream = legate::cuda::StreamPool::get_stream_pool().get_stream();
-    raft::handle_t handle(stream);
     sum_over_axis_kernel<<<num_blocks, block_size, 0, stream>>>(
       red_acc, in_acc, shape, pitches
     );

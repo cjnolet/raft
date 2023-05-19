@@ -17,7 +17,8 @@
 #include "legate_library.h"
 #include "legate_raft_cffi.h"
 
-#include "core/cuda/stream_pool.h"
+#include <common/gpu_task_context.hpp>
+
 #include "core/utilities/dispatch.h"
 
 namespace legate_raft {
@@ -65,7 +66,11 @@ struct add_constant_fn_gpu {
   template <legate::Type::Code CODE, int32_t DIM, std::enable_if_t<is_supported_gpu<CODE>>* = nullptr>
   void operator()(legate::Store& output, legate::Store& input, legate::Scalar& value)
   {
+
     using VAL = legate::legate_type_of<CODE>;
+
+    legate_raft::GpuTaskContext gpu_task_context{};
+    auto stream = gpu_task_context.handle().get_stream();
 
     auto shape = input.shape<DIM>();
 
@@ -78,9 +83,6 @@ struct add_constant_fn_gpu {
 
     auto input_acc = input.read_accessor<VAL, DIM>();
     auto output_acc = output.write_accessor<VAL, DIM>();
-
-    // TODO: Obtain handle and stream from RMM pool.
-    auto stream = legate::cuda::StreamPool::get_stream_pool().get_stream();
 
     add_constant_kernel<<<num_blocks, block_size, 0, stream>>>(
       output_acc.ptr(shape), input_acc.ptr(shape), value.value<VAL>()

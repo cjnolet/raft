@@ -19,8 +19,7 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
         static void gpu_variant(legate::TaskContext& context)
         {
 
-            GPUTaskContext task_context{};
-
+            legate_raft::GPUTaskContext task_context{};
 
             printf("Starting kmeans task\n");
             int k = context.scalars()[0].value<int>();
@@ -33,8 +32,7 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
             task_context.inject_nccl_comm(nccl_com);
 
             auto handle = task_context.handle();
-
-
+            
             int rank = handle.get_comms().get_rank();
             printf("Got NCCL comms!\n");
 

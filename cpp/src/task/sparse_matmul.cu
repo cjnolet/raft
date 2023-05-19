@@ -20,7 +20,8 @@
 #include "legate_library.h"
 #include "legate_raft_cffi.h"
 
-#include "core/cuda/stream_pool.h"
+#include <common/gpu_task_context.hpp>
+
 #include "core/utilities/dispatch.h"
 
 #include <raft/core/device_csr_matrix.hpp>
@@ -83,6 +84,10 @@ struct sparse_csr_mm_fn_gpu {
   {
     using VAL = legate::legate_type_of<CODE>;
 
+    legate_raft::GPUTaskContext gpu_task_context{};
+    auto handle = gpu_task_context.handle();
+    auto stream = handle.get_stream();
+
     auto Ax_acc = Ax.read_accessor<VAL, 1>();
     auto Aj_acc = Aj.read_accessor<int32_t, 1>();
     auto Ap_acc = Ap.read_accessor<int32_t, 1>();
@@ -93,9 +98,6 @@ struct sparse_csr_mm_fn_gpu {
     auto p = B.shape<2>().hi[1] + 1;
     auto B_acc = B.read_accessor<VAL, 2>();
     auto C_acc = C.write_accessor<VAL, 2>();
-
-    cudaStream_t stream = legate::cuda::StreamPool::get_stream_pool().get_stream();
-    raft::handle_t handle(stream);
 
     // Compute local partition size and offset.
     auto Ap_shape = Ap.shape<1>();

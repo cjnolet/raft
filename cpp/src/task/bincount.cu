@@ -16,9 +16,11 @@
 
 #include "legate_library.h"
 #include "legate_raft_cffi.h"
+
+#include <common/gpu_task_context.hpp>
+
 #include "pitches.h"
 
-#include "core/cuda/stream_pool.h"
 #include "core/utilities/dispatch.h"
 
 #include <raft/core/handle.hpp>
@@ -42,6 +44,8 @@ class BincountTask : public Task<BincountTask, BINCOUNT> {
  public:
   static void gpu_variant(legate::TaskContext& context)
   {
+      legate_raft::GPUTaskContext gpu_task_context{};
+
     auto& input  = context.inputs()[0];
     auto& output = context.reductions()[0];
 
@@ -55,8 +59,9 @@ class BincountTask : public Task<BincountTask, BINCOUNT> {
     int block_size = 256;  // TODO: tune
     int num_blocks = (volume + block_size - 1) / block_size;
 
-    cudaStream_t stream = legate::cuda::StreamPool::get_stream_pool().get_stream();
-    raft::handle_t handle(stream);
+    auto handle = gpu_task_context.handle();
+    auto stream = handle.get_stream();
+
     bincount_kernel<<<num_blocks, block_size, 0, stream>>>(
       out_acc, in_acc, in_shape, out_shape
     );

@@ -20,7 +20,8 @@
 #include "legate_raft_cffi.h"
 #include "pitches.h"
 
-#include "core/cuda/stream_pool.h"
+#include <common/gpu_task_context.hpp>
+
 #include "core/utilities/dispatch.h"
 
 #include <raft/core/handle.hpp>
@@ -79,6 +80,9 @@ struct add_fn_gpu {
   {
     using VAL = legate::legate_type_of<CODE>;
 
+    legate_raft::GPUTaskContext gpu_task_context{};
+    auto handle = gpu_task_context.handle();
+    auto stream = handle.get_stream();
     auto shape = x1.shape<DIM>();
 
     if (shape.empty()) return;
@@ -93,8 +97,6 @@ struct add_fn_gpu {
     int block_size = 256;  // TODO: tune
     int num_blocks = (volume + block_size - 1) / block_size;
 
-    cudaStream_t stream = legate::cuda::StreamPool::get_stream_pool().get_stream();
-    raft::handle_t handle(stream);
 
     bool dense = x1_acc.accessor.is_dense_row_major(shape) && x2_acc.accessor.is_dense_row_major(shape);
 
