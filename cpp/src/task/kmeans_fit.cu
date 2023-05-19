@@ -32,7 +32,7 @@ class RAFT_KMEANS_FIT_TASK : public Task<RAFT_KMEANS_FIT_TASK, RAFT_KMEANS_FIT> 
             task_context.inject_nccl_comm(nccl_com);
 
             auto handle = task_context.handle();
-            
+
             int rank = handle.get_comms().get_rank();
             printf("Got NCCL comms!\n");
 

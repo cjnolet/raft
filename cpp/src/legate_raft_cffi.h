@@ -1,3 +1,5 @@
+#pragma once
+
 enum LegateRaftOpCode {
     _OP_CODE_BASE = 0,
     ADD,

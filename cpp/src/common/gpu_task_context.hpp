@@ -16,20 +16,12 @@
 
 #pragma once
 
-#include "../legate_raft.h"
-#include "../legate_library.h"
-
-
 #include <raft/core/handle.hpp>
-#include <raft/core/device_resources.hpp>
-#include <raft/comms/std_comms.hpp>
 
 #include <nccl.h>
 
 #include <cuda_runtime.h>
 #include "allocator.hpp"
-#include <legate/core/cuda/stream_pool.h>
-#include <rmm/mr/device/pool_memory_resource.hpp>
 
 namespace legate_raft {
 
@@ -39,41 +31,8 @@ namespace legate_raft {
 
 class GPUTaskContext {
 public:
-    GPUTaskContext() : allocator_(new DeferredBufferAllocator())
-    {
-
-	rmm::mr::set_current_device_resource(allocator_.get());
-	cudaStream_t stream = (cudaStream_t)legate::cuda::StreamPool::get_stream_pool().get_stream();
-	handle_.reset(new raft::handle_t(stream));
-
-    }
-    ~GPUTaskContext()
-    {
-        rmm::mr::set_current_device_resource(nullptr);
-
-    }
-
-    void inject_nccl_comm(ncclComm_t nccl_comm) {
-
-        int n_ranks;
-        RAFT_NCCL_TRY(ncclCommCount(nccl_comm, &n_ranks));
-
-        int rank;
-        RAFT_NCCL_TRY(ncclCommUserRank(nccl_comm, &rank));
-
-        raft::comms::build_comms_nccl_only(handle_.get(), nccl_comm, n_ranks, rank);
-
-    }
-
-    raft::handle_t &handle() { 
-
-	if(!handle_) {
-                    cudaStream_t stream = (cudaStream_t)legate::cuda::StreamPool::get_stream_pool().get_stream();
-            handle_.reset(new raft::handle_t(stream));
-
-	}		
-	    return *handle_;
-    }
+    void inject_nccl_comm(ncclComm_t nccl_comm);
+    raft::handle_t &handle();
 
 private:
 

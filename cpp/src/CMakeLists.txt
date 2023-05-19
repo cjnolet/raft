@@ -6,6 +6,7 @@ add_library(
         # RAFT API Wrappers
         # raft/histogram.cu
         # raft/distance.cu
+        common/gpu_task_context.cu
         raft/raft_kmeans.cu
         # raft/raft_knn.cu
         # raft/raft_knn_merge.cu
