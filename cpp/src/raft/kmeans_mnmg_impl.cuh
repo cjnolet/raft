@@ -46,7 +46,7 @@
       const int my_rank = comm.get_rank();              \
       isRoot            = my_rank == 0;                 \
     }                                                   \
-    if (isRoot) { RAFT_LOG_INFO(fmt, ##__VA_ARGS__); } \
+    if (isRoot) { RAFT_LOG_DEBUG(fmt, ##__VA_ARGS__); } \
   } while (0)
 
     namespace kmeans {
@@ -138,9 +138,7 @@
                 {
 
 
-			printf("Inside kmeans plus plus\n");
 
-			fflush(stdout);
                     const auto& comm    = handle.get_comms();
                     cudaStream_t stream = handle.get_stream();
                     const int my_rank   = comm.get_rank();
@@ -191,7 +189,6 @@
 
                     // 1.3 - Communicate the initial centroid chosen by rank-r' to all other ranks
 
-		    printf("rank %d About to call bcast\n", my_rank);
 
 		    comm.sync_stream(handle.get_stream());
 
@@ -201,8 +198,6 @@
 
 
 
-		    printf("rank %d after calling bcast\n", my_rank);
-		    fflush(stdout);
 
                     // device buffer to flag the sample that is chosen as initial centroid
                     auto isSampleCentroid = raft::make_device_vector<std::uint8_t, IndexT>(handle, n_samples);
@@ -224,7 +219,6 @@
 
                     // L2 norm of X: ||x||^2
 
-		    printf("Rank %d about to call rownorm\n", my_rank);
                     auto L2NormX = raft::make_device_vector<DataT, IndexT>(handle, n_samples);
                     if (metric == raft::distance::DistanceType::L2Expanded ||
                         metric == raft::distance::DistanceType::L2SqrtExpanded) {
@@ -237,8 +231,6 @@
                                               stream);
                     }
 
-		    printf("Rank %d after calling rownorm\n", my_rank);
-		    fflush(stdout);
 
                     auto minClusterDistance = raft::make_device_vector<DataT, IndexT>(handle, n_samples);
                     auto uniformRands       = raft::make_device_vector<DataT, IndexT>(handle, n_samples);
@@ -268,8 +260,6 @@
                     // compute total cluster cost by accumulating the partial cost from all the
                     // ranks
 
-		    printf("About to call callreduce\n");
-		    fflush(stdout);
 
 
                     comm.allreduce(
@@ -320,8 +310,6 @@
                                 clusterCost.view(),
                                 [] __device__(const DataT& a, const DataT& b) { return a + b; });
 
-			printf("About to call allreduce again\n");
-			fflush(stdout);
 
                         comm.allreduce(
                                 clusterCost.data_handle(), clusterCost.data_handle(), 1, raft::comms::op_t::SUM, stream);
@@ -351,7 +339,6 @@
                         /// <<<< End of Step-4 >>>>
 
 
-			printf("Allocating host pinned memory\n");
 
                         size_t* nPtsSampledByRank;
 			rmm::device_uvector<size_t> nPtsSampledByRankVec(n_rank, handle.get_stream());
@@ -781,7 +768,6 @@
                            "oversampling factor must be > 0 (requested %d)",
                            (int)params.oversampling_factor);
 
-		    printf("is device accessible: %d\n", raft::get_device_for_address(X));
                     RAFT_EXPECTS(raft::get_device_for_address(X) > -1, "input data must be device accessible");
 
                     auto n_clusters = params.n_clusters;
