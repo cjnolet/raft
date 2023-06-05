@@ -59,14 +59,22 @@ _The tests require **scikit-learn**._
 
 K-means uses the multi-gpu implementation which is based entirely on building blocks and comms API from RAFT (relies on NCCL for collectives).
 
-Run the kmeans pytest on multiple GPUs
+Run the kmeans pytest on multiple GPUs. See below section for generating data at scale.
 ```bash
-legate --gpus <ngpu> legate/raft/test/test_kmeans.py <ngpu> <nrow> <ncol> <k> 
+legate --gpus <ngpu> legate/raft/test/test_kmeans.py <dataset_path> <k>
 ```
 
 Example of running `legate.raft` kmeans on 8 gpus:
 ```bash
 legate --gpus 8 legate/raft/test/test_kmeans.py 8 50000 500 k
+```
+
+## Generating Data for Testing/Benchmarking
+
+To generate data for testing/benchmarking at scale:
+```bash
+mkdir -p data/blobs1B
+python scripts/blobs_dataset_gen.py --n_rows 1000000000 --n_cols 16 --n_centers 10 --n_parts 32 --datasets_path data/blobs1B
 ```
 
 
