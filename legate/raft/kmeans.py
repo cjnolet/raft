@@ -33,7 +33,7 @@ class KMeans:
 
         # TODO: Need to figure out how to accept an existing store
         #iX_row_part_size =  int(X.shape[0] / self.n_gpus_)
-        n_features = X_store.shape[1]
+        n_features = X_store.store.shape[1]
 
         # Setup X store
 

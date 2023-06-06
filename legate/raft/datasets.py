@@ -66,11 +66,11 @@ def gen_blob_dataset(datasets_path, n_rows, n_cols, n_centers, n_parts, dtype=np
                       centers=n_centers,
                       shuffle=True)
 
-    blobs = X[:n_rows].astype(dtype)
+    blobs = X.astype(dtype)
 
     print("Outputting dataset parts")
 
-    chunks = np.array_split(X, n_parts)
+    chunks = np.array_split(blobs, n_parts)
     for i, chunk in enumerate(chunks):
         with open('{}/part_{}.npy'.format(gen_dir, i), 'wb') as f:
             np.save(f, chunk)
