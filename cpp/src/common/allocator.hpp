@@ -29,7 +29,7 @@ namespace legate_raft {
 
             struct Allocator {
 
-	        Allocator() = default; 
+	        Allocator() = default;
                 template<typename T>
                 T *allocate_elements(size_t num_elements) {
                     return static_cast<T *>(allocate(sizeof(T) * num_elements));
@@ -68,7 +68,7 @@ namespace legate_raft {
   assert(buffers.find(ptr) == buffers.end());
 #endif
   buffers[ptr] = buffer;
-  return ptr; 
+  return ptr;
 		}
 
                 void deallocate(void *p) override {

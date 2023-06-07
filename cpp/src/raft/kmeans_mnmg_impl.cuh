@@ -350,8 +350,8 @@
                         // potentialCentroids
                         // RAFT_CUDA_TRY(cudaMemsetAsync(nPtsSampledByRank, 0, n_rank * sizeof(int), stream));
                         RAFT_CUDA_TRY(cudaMemsetAsync(nPtsSampledByRank, 0, n_rank*sizeof(size_t), handle.get_stream()));
- 
-		        size_t nPts = inRankCp.size() / n_features;	
+
+		        size_t nPts = inRankCp.size() / n_features;
 			raft::copy(nPtsSampledByRank + my_rank, &nPts, 1, handle.get_stream());
                         //nPtsSampledByRank[my_rank] = inRankCp.size() / n_features;
                         comm.allgather(&(nPtsSampledByRank[my_rank]), nPtsSampledByRank, 1, stream);

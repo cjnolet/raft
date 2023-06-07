@@ -28,7 +28,7 @@ add_library(
         task/invert_labels.cc
         # task/knn_merge_task.cc
         # task/knn_task.cc
-	task/make_blobs.cu
+    task/make_blobs.cu
         task/log.cu
         task/map_labels.cc
         task/matmul.cc

@@ -13,27 +13,23 @@
 # limitations under the License.
 #
 
-import legate.core.types as types
-from legate.core import Rect
-from legate.raft.library import user_context as context
-from legate.raft.library import user_lib
-from legate.raft.core import as_store, as_array
-import numpy as np
 import time
 
-class KMeans:
+import legate.core.types as types
+from legate.core import Rect
 
+from legate.raft.core import as_array
+from legate.raft.library import user_context as context
+from legate.raft.library import user_lib
+
+
+class KMeans:
     def __init__(self, n_gpus):
         self.centroids_ = None
         self.n_gpus_ = n_gpus
 
     def fit(self, X_store, k: int):
-
         print("Inside fit!!!", flush=True)
-
-        # TODO: Need to figure out how to accept an existing store
-        #iX_row_part_size =  int(X.shape[0] / self.n_gpus_)
-        n_features = X_store.store.shape[1]
 
         # Setup X store
 
@@ -43,8 +39,7 @@ class KMeans:
         # Setup buffer stores
         n_parts = X_store.partition.color_shape[0]
 
-        print("n_parts " + str( n_parts))
-        centroids_buf = np.zeros((k, n_features), dtype=np.float32)
+        print("n_parts " + str(n_parts))
         # labels_buf = np.zeros((X_row_part_size*n_parts, 1), dtype=np.int32)
 
         centroids_store = context.create_store(types.float32, ndim=2)
@@ -53,8 +48,9 @@ class KMeans:
         fit_start = time.time()
 
         # Run KMeans Fit task
-        kmeans_fit_task = context.create_manual_task(user_lib.cffi.RAFT_KMEANS_FIT,
-                                                     launch_domain=Rect((n_parts, 1)))
+        kmeans_fit_task = context.create_manual_task(
+            user_lib.cffi.RAFT_KMEANS_FIT, launch_domain=Rect((n_parts, 1))
+        )
 
         # NOTE: The configuration is order dependent
         kmeans_fit_task.add_scalar_arg(k, types.int32)

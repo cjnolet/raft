@@ -13,25 +13,36 @@
 # limitations under the License.
 #
 
-import legate.core.types as types
-from legate.core import Rect
-from legate.raft.library import user_context as context
-from legate.raft.library import user_lib
-from legate.raft.core import create_matrix, create_vector, as_array, as_store
 import cupy as cp
+import legate.core.types as types
 import numpy as np
 
-def make_blobs(n_samples, n_features, n_centers, n_parts, dtype=np.dtype("float32"), center_box=(-10.0, 10.0)):
+from legate.raft.core import as_store, create_matrix, create_vector
+from legate.raft.library import user_context as context
+from legate.raft.library import user_lib
 
+
+def make_blobs(
+    n_samples,
+    n_features,
+    n_centers,
+    n_parts,
+    dtype=np.dtype("float32"),
+    center_box=(-10.0, 10.0),
+):
     X = create_matrix(n_samples, n_features, dtype, n_parts)
     y = create_vector(n_samples, np.dtype("int32"), n_parts)
 
-    #make_blobs_task = context.create_manual_task(user_lib.cffi.MAKE_BLOBS,
-     #                                            launch_domain=Rect((n_parts, 1)))
+    # make_blobs_task = context.create_manual_task(user_lib.cffi.MAKE_BLOBS,
+    #                                            launch_domain=Rect((n_parts, 1)))
 
     make_blobs_task = context.create_auto_task(user_lib.cffi.MAKE_BLOBS)
 
-    centers = cp.random.uniform(center_box[0], center_box[1], size=(n_centers, n_features)).astype("float32").get()
+    centers = (
+        cp.random.uniform(center_box[0], center_box[1], size=(n_centers, n_features))
+        .astype("float32")
+        .get()
+    )
     centers_store = as_store(centers)
 
     # NOTE: The configuration is order dependent
