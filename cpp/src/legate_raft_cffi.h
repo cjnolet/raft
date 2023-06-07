@@ -27,4 +27,5 @@ enum LegateRaftOpCode {
     SPARSE_CSR_MM,
     SUM_OVER_AXIS,
     UNIQUE,
+    MAKE_BLOBS
 };

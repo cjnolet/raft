@@ -18,6 +18,7 @@ from numbers import Number
 from typing import TypeAlias
 
 import numpy as np
+import math
 from legate.core import Store
 from legate.core import types as ty
 from legate.core._legion.future import Future
@@ -62,6 +63,28 @@ class _NDArray:
             "data": (self.ptr, self.read_only),
             "strides": self.strides,
         }
+
+def create_matrix(n_rows, n_cols, dtype, n_parts):
+    store = context.create_store(
+        _NP2LT_TYPES[dtype],
+        shape=(n_rows, n_cols),
+        optimize_scalar=False,
+    )
+
+    n_rows_per_parts = math.ceil(n_rows/n_parts)
+
+    return store.partition_by_tiling((n_rows_per_parts, n_cols))
+
+def create_vector(n_rows, dtype, n_parts):
+    store = context.create_store(
+        _NP2LT_TYPES[dtype],
+        shape=(n_rows),
+        optimize_scalar=False,
+    )
+
+    n_rows_per_parts = math.ceil(n_rows/n_parts)
+
+    return store.partition_by_tiling((n_rows_per_parts))
 
 
 def as_store(array: np.ndarray) -> Store:
