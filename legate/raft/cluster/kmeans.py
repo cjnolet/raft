@@ -15,9 +15,9 @@
 
 import legate.core.types as types
 from legate.core import Rect
-from .library import user_context as context
-from .library import user_lib
-from .core import as_store, as_array
+from legate.raft.library import user_context as context
+from legate.raft.library import user_lib
+from legate.raft.core import as_store, as_array
 import numpy as np
 import time
 

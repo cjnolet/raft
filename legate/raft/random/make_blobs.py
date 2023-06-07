@@ -15,9 +15,9 @@
 
 import legate.core.types as types
 from legate.core import Rect
-from .library import user_context as context
-from .library import user_lib
-from .core import create_matrix, create_vector, as_array, as_store
+from legate.raft.library import user_context as context
+from legate.raft.library import user_lib
+from legate.raft.core import create_matrix, create_vector, as_array, as_store
 import cupy as cp
 import numpy as np
 
