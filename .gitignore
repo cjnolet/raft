@@ -4,7 +4,6 @@
 __pycache__/
 _skbuild/
 build/
-data/
 cpp/src/legate_library.cc
 cpp/src/legate_library.h
 cpp/src/legate_library.h.eggs/
