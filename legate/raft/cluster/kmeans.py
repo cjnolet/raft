@@ -13,43 +13,44 @@
 # limitations under the License.
 #
 
+import time
+
 import legate.core.types as types
 from legate.core import Rect
-from .library import user_context as context
-from .library import user_lib
-from .core import as_store, as_array
-import numpy as np
+
+from legate.raft.core import as_array
+from legate.raft.library import user_context as context
+from legate.raft.library import user_lib
+
 
 class KMeans:
-
     def __init__(self, n_gpus):
         self.centroids_ = None
         self.n_gpus_ = n_gpus
 
-    def fit(self, X: np.ndarray, k: int):
-
+    def fit(self, X_store, k: int):
         print("Inside fit!!!", flush=True)
 
-        # TODO: Need to figure out how to accept an existing store
-        X_row_part_size =  int(X.shape[0] / self.n_gpus_)
-        n_features = X.shape[1]
-
         # Setup X store
-        X_store = as_store(X).partition_by_tiling((X_row_part_size, n_features))
+
+        as_store_start = time.time()
+        print("Tiling took " + str(time.time() - as_store_start))
 
         # Setup buffer stores
         n_parts = X_store.partition.color_shape[0]
 
-        print("n_parts " + str( n_parts))
-        centroids_buf = np.zeros((k, n_features), dtype=np.float32)
+        print("n_parts " + str(n_parts))
         # labels_buf = np.zeros((X_row_part_size*n_parts, 1), dtype=np.int32)
 
         centroids_store = context.create_store(types.float32, ndim=2)
         # labels_store = as_store(labels_buf).partition_by_tiling((X_row_part_size, 1))
 
+        fit_start = time.time()
+
         # Run KMeans Fit task
-        kmeans_fit_task = context.create_manual_task(user_lib.cffi.RAFT_KMEANS_FIT,
-                                                     launch_domain=Rect((n_parts, 1)))
+        kmeans_fit_task = context.create_manual_task(
+            user_lib.cffi.RAFT_KMEANS_FIT, launch_domain=Rect((n_parts, 1))
+        )
 
         # NOTE: The configuration is order dependent
         kmeans_fit_task.add_scalar_arg(k, types.int32)
@@ -60,6 +61,13 @@ class KMeans:
         kmeans_fit_task.add_nccl_communicator()
         kmeans_fit_task.execute()
 
+        print("Fit took: " + str(time.time() - fit_start))
+
         print("Converting resulting centroids store")
+
+        result_start = time.time()
+
         self.centroids_ = as_array(centroids_store)
+
+        print("Results took: " + str(time.time() - result_start))
         return self

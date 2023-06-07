@@ -27,8 +27,6 @@ from .array_api import (
 )
 from .core import as_array, as_scalar, as_store, convert
 from .knn import run_knn
-
-from .kmeans import KMeans
 from .multiarray import bincount, categorize, matmul, multiply
 
 __all__ = [
