@@ -23,9 +23,9 @@ namespace legate_raft {
 
             int n_centers = context.scalars()[0].value<int>();
 
-            auto& X = context.inputs()[0];
-            auto& y = context.inputs()[1];
-            auto& centers = context.inputs()[2];
+            auto& X = context.outputs()[0];
+            auto& y = context.outputs()[1];
+            auto& centers = context.inputs()[0];
 
             auto handle = task_context.handle();
 
@@ -36,21 +36,23 @@ namespace legate_raft {
             // is used to obtain the pointer to the start of the partition.
             uint64_t X_offset = X.shape<2>().lo[0];
             uint64_t y_offset = y.shape<1>().lo[0];
-            uint64_t centers_offset = search.shape<2>().lo[0];
+            uint64_t centers_offset = centers.shape<2>().lo[0];
 
-            float* X_read = const_cast<float*>(X.read_accessor<float, 2>().ptr(Legion::DomainPoint(X_offset)));
-            int* y_read = const_cast<int*>(X.read_accessor<int, 1>().ptr(Legion::DomainPoint(y_offset)));
+	    printf("n_samples=%d, n_features=%d, X_offset=%ld, y_offset=%ld, centers_offset=%ld\n", n_samples, n_features, X_offset, y_offset, centers_offset);
+
+            float* X_read = const_cast<float*>(X.write_accessor<float, 2>().ptr(Legion::DomainPoint(X_offset)));
+            int* y_read = const_cast<int*>(y.write_accessor<int, 1>().ptr(Legion::DomainPoint(y_offset)));
             float* centers_read = const_cast<float*>(centers.read_accessor<float, 2>().ptr(Legion::DomainPoint(centers_offset)));
 
-            auto X_view = raft::make_device_matrix_view(X_read, n_samples, n_features);
-            auto y_view = raft::make_device_vector_view(y_read, n_samples);
-            auto centers_view = std::make_optional(raft::make_device_matrix_view(centers_view, n_centers, n_features));
+            auto X_view = raft::make_device_matrix_view<float, int>(X_read, n_samples, n_features);
+            auto y_view = raft::make_device_vector_view<int, int>(y_read, n_samples);
+            auto centers_view = raft::make_device_matrix_view<float, int>(centers_read, n_centers, n_features);
 
             raft::random::make_blobs<float, int>(handle,
                                     X_view,
                                     y_view,
                                     n_centers,
-                                    centers_view,
+                                    std::optional(centers_view),
                                     std::nullopt,
                                     true,
                                     -10.0,
@@ -66,7 +68,7 @@ namespace  // unnamed
 
     static void __attribute__((constructor)) register_tasks(void)
     {
-        legate_raft::RAFT_KMEANS_FIT_TASK::register_variants();
+        legate_raft::MAKE_BLOBS_TASK::register_variants();
     }
 
 }  // namespace

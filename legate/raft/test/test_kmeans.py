@@ -38,7 +38,8 @@ def test_kmeans(n_rows, n_cols, k):
 if __name__ == "__main__":
 
 
-    dataset_path = sys.argv[1]
+    n_rows = int(sys.argv[1])
+    n_cols = int(sys.argv[2])
     k = int(sys.argv[2])
 
-    test_kmeans(dataset_path, k)
+    test_kmeans(n_rows, n_cols, k)
