@@ -31,7 +31,7 @@ def make_blobs(n_samples, n_features, n_centers, n_parts, dtype=np.dtype("float3
 
     make_blobs_task = context.create_auto_task(user_lib.cffi.MAKE_BLOBS)
 
-    centers = cp.random.uniform(center_box[0], center_box[1], size=(n_centers, n_features)).get()
+    centers = cp.random.uniform(center_box[0], center_box[1], size=(n_centers, n_features)).astype("float32").get()
     centers_store = as_store(centers)
 
     # NOTE: The configuration is order dependent

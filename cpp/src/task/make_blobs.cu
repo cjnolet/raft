@@ -38,7 +38,7 @@ namespace legate_raft {
             uint64_t y_offset = y.shape<1>().lo[0];
             uint64_t centers_offset = centers.shape<2>().lo[0];
 
-	    printf("n_samples=%d, n_features=%d, X_offset=%ld, y_offset=%ld, centers_offset=%ld\n", n_samples, n_features, X_offset, y_offset, centers_offset);
+	    //printf("n_samples=%d, n_features=%d, X_offset=%ld, y_offset=%ld, centers_offset=%ld\n", n_samples, n_features, X_offset, y_offset, centers_offset);
 
             float* X_read = const_cast<float*>(X.write_accessor<float, 2>().ptr(Legion::DomainPoint(X_offset)));
             int* y_read = const_cast<int*>(y.write_accessor<int, 1>().ptr(Legion::DomainPoint(y_offset)));
