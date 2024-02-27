@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,6 +14,12 @@
 # limitations under the License.
 
 DTYPE_SIZES = {"float": 4, "half": 2, "fp8": 1}
+
+
+def raft_cagra_build_constraints(params, dims):
+    if "graph_degree" in params and "intermediate_graph_degree" in params:
+        return params["graph_degree"] <= params["intermediate_graph_degree"]
+    return True
 
 
 def raft_ivf_pq_build_constraints(params, dims):
@@ -36,8 +42,10 @@ def raft_ivf_pq_search_constraints(params, build_params, k, batch_size):
 
 
 def raft_cagra_search_constraints(params, build_params, k, batch_size):
+    ret = True
     if "itopk" in params:
-        return params["itopk"] >= k
+        ret = ret and params["itopk"] >= k
+    return ret
 
 
 def hnswlib_search_constraints(params, build_params, k, batch_size):

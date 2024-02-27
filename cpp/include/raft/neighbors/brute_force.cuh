@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023, NVIDIA CORPORATION.
+ * Copyright (c) 2020-2024, NVIDIA CORPORATION.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,10 +44,10 @@ namespace raft::neighbors::brute_force {
  * int n_cols = 10000;
 
  * raft::device_resources res;
- * auto dataset = raft::make_device_matrix<float, int>(res, n_rows, n_cols);
- * auto labels = raft::make_device_vector<float, int>(res, n_rows);
+ * auto dataset = raft::make_device_matrix<float, int64_t>(res, n_rows, n_cols);
+ * auto labels = raft::make_device_vector<int64_t, int64_t>(res, n_rows);
 
- * raft::make_blobs(res, dataset.view(), labels.view());
+ * raft::random::make_blobs(res, dataset.view(), labels.view());
  *
  * // create a brute_force knn index from the dataset
  * auto index = raft::neighbors::brute_force::build(res,

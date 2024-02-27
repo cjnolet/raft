@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 copyright_notice = """
 /*
- * Copyright (c) 2023, NVIDIA CORPORATION.
+ * Copyright (c) 2023-2024, NVIDIA CORPORATION.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,6 @@ ext_headers = [
     "raft/core/logger-ext.hpp",
     "raft/neighbors/refine-ext.cuh",
     "raft/neighbors/detail/ivf_flat_search-ext.cuh",
-    "raft/neighbors/detail/selection_faiss-ext.cuh",
     "raft/linalg/detail/coalesced_reduction-ext.cuh",
     "raft/spatial/knn/detail/ball_cover/registers-ext.cuh",
     "raft/neighbors/detail/ivf_flat_interleaved_scan-ext.cuh",

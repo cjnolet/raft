@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020-2023, NVIDIA CORPORATION.
+# Copyright (c) 2020-2024, NVIDIA CORPORATION.
 ########################
 # RAFT Version Updater #
 ########################
@@ -69,12 +69,13 @@ for FILE in dependencies.yaml conda/environments/*.yaml; do
     sed_runner "/-.* ${DEP}==/ s/==.*/==${NEXT_SHORT_TAG_PEP440}\.*/g" ${FILE};
   done
   sed_runner "/-.* ucx-py==/ s/==.*/==${NEXT_UCX_PY_SHORT_TAG_PEP440}\.*/g" ${FILE};
+  sed_runner "/-.* ucx-py-cu11==/ s/==.*/==${NEXT_UCX_PY_SHORT_TAG_PEP440}\.*/g" ${FILE};
+  sed_runner "/-.* ucx-py-cu12==/ s/==.*/==${NEXT_UCX_PY_SHORT_TAG_PEP440}\.*/g" ${FILE};
 done
 for FILE in python/*/pyproject.toml; do
   for DEP in "${DEPENDENCIES[@]}"; do
     sed_runner "/\"${DEP}==/ s/==.*\"/==${NEXT_SHORT_TAG_PEP440}.*\"/g" ${FILE}
   done
-  sed_runner "s/^version = .*/version = \"${NEXT_FULL_TAG}\"/g" "${FILE}"
   sed_runner "/\"ucx-py==/ s/==.*\"/==${NEXT_UCX_PY_SHORT_TAG_PEP440}.*\"/g" ${FILE}
 done
 

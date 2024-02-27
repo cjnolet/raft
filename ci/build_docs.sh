@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 
 set -euo pipefail
 
@@ -28,7 +28,7 @@ rapids-mamba-retry install \
   pylibraft \
   raft-dask
 
-export RAPIDS_VERSION_NUMBER="23.12"
+export RAPIDS_VERSION_NUMBER="24.02"
 export RAPIDS_DOCS_DIR="$(mktemp -d)"
 
 rapids-logger "Build CPP docs"

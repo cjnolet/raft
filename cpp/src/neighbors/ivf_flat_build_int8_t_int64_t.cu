@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, NVIDIA CORPORATION.
+ * Copyright (c) 2023-2024, NVIDIA CORPORATION.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,18 @@
     raft::resources const& handle,                              \
     const raft::neighbors::ivf_flat::index_params& params,      \
     raft::device_matrix_view<const T, IdxT, row_major> dataset, \
+    raft::neighbors::ivf_flat::index<T, IdxT>& idx);            \
+                                                                \
+  template auto raft::neighbors::ivf_flat::build<T, IdxT>(      \
+    raft::resources const& handle,                              \
+    const raft::neighbors::ivf_flat::index_params& params,      \
+    raft::host_matrix_view<const T, IdxT, row_major> dataset)   \
+    ->raft::neighbors::ivf_flat::index<T, IdxT>;                \
+                                                                \
+  template void raft::neighbors::ivf_flat::build<T, IdxT>(      \
+    raft::resources const& handle,                              \
+    const raft::neighbors::ivf_flat::index_params& params,      \
+    raft::host_matrix_view<const T, IdxT, row_major> dataset,   \
     raft::neighbors::ivf_flat::index<T, IdxT>& idx);
 instantiate_raft_neighbors_ivf_flat_build(int8_t, int64_t);
 
