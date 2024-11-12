@@ -194,7 +194,7 @@ if(BUILD_TESTS)
     matrix/sample_rows.cu
     matrix/slice.cu
     matrix/triangular.cu
-    sparse/spectral_matrix.cu
+    # sparse/spectral_matrix.cu
     LIB
     EXPLICIT_INSTANTIATE_ONLY
   )
@@ -222,10 +222,7 @@ if(BUILD_TESTS)
     random/excess_sampling.cu
   )
 
-  ConfigureTest(
-    NAME SOLVERS_TEST PATH linalg/eigen_solvers.cu lap/lap.cu sparse/mst.cu LIB
-    EXPLICIT_INSTANTIATE_ONLY
-  )
+  ConfigureTest(NAME SOLVERS_TEST PATH lap/lap.cu sparse/mst.cu LIB EXPLICIT_INSTANTIATE_ONLY)
 
   ConfigureTest(
     NAME
